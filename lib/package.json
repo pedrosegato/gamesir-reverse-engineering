@@ -2,6 +2,32 @@
   "name": "gamesir-hid",
   "version": "0.1.0",
   "description": "Controle do GameSir Cyclone 2 via HID (LEDs, perfis, vibração, estado), a partir da engenharia reversa do GameSir Connect",
+  "keywords": [
+    "gamesir",
+    "cyclone-2",
+    "gamepad",
+    "controller",
+    "hid",
+    "node-hid",
+    "webhid",
+    "rgb",
+    "macro",
+    "reverse-engineering"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/pedrosegato/gamesir-reverse-engineering#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pedrosegato/gamesir-reverse-engineering.git",
+    "directory": "lib"
+  },
+  "bugs": {
+    "url": "https://github.com/pedrosegato/gamesir-reverse-engineering/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -38,6 +64,5 @@
     "tsx": "^4.19.0",
     "typescript": "~5.9.3",
     "vitest": "^3.2.0"
-  },
-  "license": "MIT"
+  }
 }
