@@ -86,7 +86,7 @@ O que o código do app não dizia, ou dizia errado:
 | Loop de macro | recomeça depois do fim do último passo |
 | Long Press | soltar o botão interrompe a macro na hora |
 | Gravação pelo controle | termina com `0F 16 k 02` ou ao chegar em 30 passos; um passo só vira mapeamento simples |
-| LEDs | `UpperRight` é o LED do centro; `UpperLeft` não tem LED |
+| LEDs | `UpperRight` é a coluna de 4 LEDs entre os analógicos: a cor vem da zona, a quantidade acesa é o perfil de jogo ativo (1 = só o de cima); `UpperLeft` não tem LED; `ProfileLed` não muda nenhum LED |
 | PID `0x0575` | dongle sem controle conectado |
 | Desconexão | o `node-hid` emite `error` quando o controle some; sem listener, o processo Node termina |
 
@@ -94,6 +94,6 @@ O que o código do app não dizia, ou dizia errado:
 
 | | |
 |---|---|
-| Sem significado conhecido | report `0x12`: bytes 10, 12 e 25–34 · perfil de luz: `UserEffectIndex`, `ProfileLed` · perfil de jogo: campos de áudio |
+| Sem significado conhecido | report `0x12`: bytes 10, 12 e 25–34 · perfil de luz: `UserEffectIndex` · perfil de jogo: campos de áudio |
 | Não verificado | PIDs `0x101D` e `0x102A` · `0F 16 k 00` (cancelar gravação) · `0F FD` (calibração) · gravação de "device id" |
 | Fora do escopo | atualização de firmware · Bluetooth · controles da família DLL |

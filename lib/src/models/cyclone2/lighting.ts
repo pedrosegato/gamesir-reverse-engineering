@@ -36,7 +36,10 @@ export const LightOffset = {
   Reserved: TRAILER_OFFSET + 7,
 } as const;
 
-/** On the Cyclone 2: LowerLeft/LowerRight = sides, Home = Home button, UpperRight = center LED, UpperLeft = no LED. */
+/**
+ * On the Cyclone 2: LowerLeft/LowerRight = sides, Home = Home button, UpperRight = the 4-LED column between the
+ * sticks (as many lit as the active game profile number), UpperLeft = no LED.
+ */
 export type Frame = Record<LedZone, Rgb>;
 export type FrameInput = Partial<Record<LedZone, ColorInput>>;
 

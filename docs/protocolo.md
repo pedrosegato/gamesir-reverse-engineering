@@ -140,7 +140,7 @@ Valores crus, sem calibração. Eixos com o controle deitado, botões para cima:
 | 1 + 124·a | 124 | animação `a`: 0–3 são do usuário, 4 é o efeito de carregamento |
 | 621 | 1 | bit 0: reage ao áudio |
 | 622 | 1 | `UserEffectIndex`, sem uso conhecido |
-| 623–625 | 3 | `ProfileLed` RGB, sem uso conhecido |
+| 623–625 | 3 | `ProfileLed` RGB; no Cyclone 2, mudar não altera nenhum LED |
 | 626 | 1 | bit 0: acorda ao levantar |
 | 627 | 1 | minutos até dormir: 0 (nunca), 1, 5, 10 ou 20 |
 | 628–634 | 7 | reservado |
@@ -163,10 +163,11 @@ Cores dentro do frame, em ordem diferente da do report `0x12`:
 | 1 | +3..+5 | LowerRight | lateral direita |
 | 2 | +6..+8 | UpperLeft | sem LED |
 | 3 | +9..+11 | Home | botão Home |
-| 4 | +12..+14 | UpperRight | centro, junto ao botão M |
+| 4 | +12..+14 | UpperRight | coluna de 4 LEDs entre os analógicos |
 
 ![Tela de luzes do app: ① LowerLeft, ② Home, ③ LowerRight, ④ UpperRight](img/c2-luzes-app.png)
 
+- A coluna `UpperRight` acende tantos LEDs quanto o número do perfil de jogo ativo, de cima para baixo: perfil 1 só o de cima, perfil 4 todos. Na dock de carga o firmware usa a coluna para mostrar a carga. Não há comando para acender os LEDs da coluna um a um.
 - No controle, M + analógico esquerdo ←/→ troca a animação ativa; o controle notifica com `10 0F`.
 - Para apagar, use um frame preto; não existe flag de desligar.
 - Os presets do app (Flow, Rainbow, Pulse, Standoff, Alarm, Off) só preenchem frames e velocidade de uma animação. As cores estão em `lib/src/presets.ts`.

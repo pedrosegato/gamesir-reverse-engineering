@@ -9,7 +9,7 @@ export interface Indicator {
 
 export type Indicators = Readonly<Record<IndicatorKey, Indicator>>;
 
-const CHARGING_COLORS = ["#ff0000", "#ff9600", "#ffff00", "#00ff00", "#0096ff", "#b400ff"] as const;
+export const CHARGING_COLORS = ["#ff0000", "#ff9600", "#ffff00", "#00ff00", "#0096ff", "#b400ff"] as const;
 
 function frames(zone: LedZone, ...colors: ColorInput[]): FrameInput[] {
   return colors.map((color) => {
