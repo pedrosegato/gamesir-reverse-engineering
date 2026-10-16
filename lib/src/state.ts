@@ -54,12 +54,21 @@ export interface Buttons {
   M: boolean;
 }
 
-/** Valores crus int16. Parado na mesa, |accel| ≈ 8192 (1 g). Nome dos eixos ainda não confirmado. */
+export interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
+ * Valores crus int16, sem calibração. Eixos com o controle deitado, botões para cima:
+ * X → lateral direita, Y → sai da face, Z → para trás (para quem segura). Giroscópio pela regra da mão direita.
+ */
 export interface Imu {
   /** Contador de 8 bits, avança a cada amostra. */
   counter: number;
-  gyro: [number, number, number];
-  accel: [number, number, number];
+  gyro: Vec3;
+  accel: Vec3;
 }
 
 export interface GamepadState {
@@ -101,11 +110,11 @@ export function parseState(data: ArrayLike<number>): GamepadState {
   const macro = d[Offset.MacroRecord];
   const hatValue = face & 0x0f;
   const view = new DataView(d.buffer, d.byteOffset, d.byteLength);
-  const vec3 = (o: number): [number, number, number] => [
-    view.getInt16(o, true),
-    view.getInt16(o + 2, true),
-    view.getInt16(o + 4, true),
-  ];
+  const vec3 = (o: number): Vec3 => ({
+    x: view.getInt16(o, true),
+    y: view.getInt16(o + 2, true),
+    z: view.getInt16(o + 4, true),
+  });
 
   const leds = {} as Record<LedZone, Rgb>;
   LED_ZONES.forEach((zone, i) => {

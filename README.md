@@ -73,7 +73,7 @@ Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
 | Vibração | ✅ |
 | Escrita do perfil de luz: cor fixa, só Home, preset, troca de animação | ✅ |
 | Luz 4 = LED do centro | ✅ |
-| IMU: contador (11), giroscópio (13–18), acelerômetro (19–24) | ✅ layout · nome dos eixos pendente |
+| IMU: contador (11), giroscópio (13–18), acelerômetro (19–24), eixos | ✅ · sinal do gyro Z inferido |
 | Escrita do perfil de jogo (remapeamento, taxa de report, macro) | pendente |
 | Gravação de macro pelo controle (`0F 16`) | pendente |
 | Cabo, Bluetooth | pendente |

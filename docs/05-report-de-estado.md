@@ -15,10 +15,10 @@
 | 7 | 0 / 1 | Home / Capture | PS / Camera |
 | 8, 9 | | LT, RT analógicos 0–255 | |
 | 10 | | não mapeado (`0x20` nas capturas) | |
-| 11 | | contador da IMU, 8 bits; avança ~3 por report e dá a volta em 255 | |
+| 11 | | contador da IMU, 8 bits; ~780/s (≈ 3 por report), dá a volta em 255 | |
 | 12 | | não mapeado (sempre `0`) | |
-| 13–18 | | **giroscópio**: 3 × int16 LE; parado: `7, 1, 4` | |
-| 19–24 | | **acelerômetro**: 3 × int16 LE; parado na mesa: `543, 8087, -29` → \|a\| ≈ 8105 ≈ 1 g (8192 LSB/g, faixa ±4 g) | |
+| 13–18 | | **giroscópio** X, Y, Z: int16 LE ([IMU](#imu)) | |
+| 19–24 | | **acelerômetro** X, Y, Z: int16 LE ([IMU](#imu)) | |
 | 25–34 | | não mapeado | |
 | 35 | | carregando = 1 | `chargeState` |
 | 36 | | bateria % | `batteryLevel` |
@@ -35,11 +35,30 @@
 
 - Ordem das cores: array `au` (`main.app.js:8052`). **Difere da ordem do frame** no perfil de luz ([06](06-perfil-de-luz.md)).
 - As cores são as renderizadas no momento (animação + brilho).
-- IMU: nenhum parser do app (`ie`, `parseGamepadState`) lê os bytes 10–34. Layout tirado do hardware: os valores mudam ao mexer o controle e o acelerômetro parado mede 1 g. Qual eixo é qual: não confirmado (`examples/imu.ts`).
 - Bytes não mapeados: investigar com `pad.onRaw()` movendo o controle.
 - Confirmado no hardware: bateria (36), cor do Home (38–40), analógico esquerdo, ABXY, hat solto = `0xF`, animação ativa (37), IMU.
 
 ```ts
 await pad.start();
-pad.onState((s) => console.log(s.batteryLevel, s.chargeState, s.buttons.A, s.leftStick, s.leds.Home, s.imu.accel));
+pad.onState((s) => console.log(s.batteryLevel, s.chargeState, s.buttons.A, s.leftStick, s.leds.Home, s.imu.accel.y));
 ```
+
+## IMU
+
+Nenhum parser do app (`ie`, `parseGamepadState`) lê os bytes 10–34: tudo abaixo vem do hardware (`examples/imu.ts`).
+
+Eixos com o controle deitado, botões para cima, gatilhos para a frente:
+
+| Eixo | Acelerômetro: +1 g quando o eixo aponta para cima | Giroscópio: positivo quando |
+|---|---|---|
+| X | lateral direita | a frente (gatilhos) sobe |
+| Y | sai da face dos botões | gira no sentido anti-horário, visto de cima |
+| Z | para trás, em direção a quem segura | a lateral direita sobe (inferido pela regra da mão direita, não testado) |
+
+Sinais do giroscópio conferidos contra o acelerômetro: com gyro X positivo a frente sobe e Z vai a −1 g; com a face virada para quem segura e gyro Y positivo, a lateral direita sobe e X vai a +1 g.
+
+| | |
+|---|---|
+| Valores | crus, sem calibração |
+| Acelerômetro | 8192 LSB/g (±4 g). Offset estimado por ajuste de esfera em 5 posições paradas: X +0,09 g, Y +0,02 g, **Z −0,16 g** (resíduo < 0,1 %). Sem descontar, \|a\| parado varia de 0,83 a 1,15 g |
+| Giroscópio | parado ≈ `8, 1, 6`. Escala estimada em 16–20 LSB por °/s (4 giros de ~90° à mão): provável ±2000 °/s (16,4 LSB por °/s) |
