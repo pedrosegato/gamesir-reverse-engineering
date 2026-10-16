@@ -1,4 +1,5 @@
 import { ByteReader, ByteWriter } from "../../core/binary.js";
+import type { KeyCode } from "../../core/keycodes.js";
 import { GAME_PROFILE_SIZE } from "./constants.js";
 
 const NAME_SIZE = 32;
@@ -25,7 +26,9 @@ export const MAPPED_BUTTONS = [
   "Menu",
   "Capture",
 ] as const;
-export type MappedButton = (typeof MAPPED_BUTTONS)[number];
+export type MappedButtonName = (typeof MAPPED_BUTTONS)[number];
+/** The `KeyCode` of a button that can be remapped. */
+export type MappedButton = (typeof KeyCode)[MappedButtonName];
 
 export const ReportRate = { Hz250: 0, Hz500: 1, Hz1000: 2 } as const;
 export const StickOutput = { LeftStick: 1, RightStick: 2, Keys: 3, Mouse: 4 } as const;
@@ -144,7 +147,7 @@ export interface FunData {
 export interface GameProfile {
   name: string;
   fun: FunData;
-  buttons: Record<MappedButton, KeyMapping>;
+  buttons: Record<MappedButtonName, KeyMapping>;
   L4: BackButton;
   R4: BackButton;
   LT: Trigger;
@@ -365,7 +368,7 @@ export function decodeGameProfile(bytes: ArrayLike<number>): GameProfile {
   const r = new ByteReader(Uint8Array.from(bytes));
   const name = readName(r);
   const fun = readFunData(r);
-  const buttons = {} as Record<MappedButton, KeyMapping>;
+  const buttons = {} as Record<MappedButtonName, KeyMapping>;
   for (const button of MAPPED_BUTTONS) buttons[button] = readKeyMapping(r);
   return {
     name,

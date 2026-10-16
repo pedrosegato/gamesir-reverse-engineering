@@ -5,9 +5,11 @@ import {
   cyclone2,
   GAME_PROFILE_SIZE,
   type HidTransport,
+  KeyCode,
   LIGHT_PROFILE_SIZE,
   LightOffset,
   Profile,
+  protocol,
   RESPONSE_REPORT_ID,
   STATE_REPORT_ID,
 } from "../src/index.js";
@@ -137,19 +139,19 @@ describe("Cyclone2", () => {
   it("a macro on L4 turns off the simple mapping, like the app", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
-    await pad.remapButton(1, "A", 10);
+    await pad.remapButton(1, KeyCode.A, KeyCode.B);
     await pad.updateGameProfile(1, (p) => {
-      p.L4 = { ...p.L4, mapEnabled: true, mapTo: [9, 0, 0] };
+      p.L4 = { ...p.L4, mapEnabled: true, mapTo: [KeyCode.A, 0, 0] };
       return p;
     });
-    const steps = [{ key: 9, holdMs: 200, delayMs: 300 }];
-    await pad.setMacro(1, "L4", steps);
+    const steps = [{ key: KeyCode.A, holdMs: 200, delayMs: 300 }];
+    await pad.setMacro(1, KeyCode.L4, steps);
     const { L4 } = await pad.readGameProfile(1);
     expect(L4.mapEnabled).toBe(false);
     expect(L4.mapTo).toEqual([0, 0, 0]);
     expect(L4.macro).toEqual({ enabled: true, holdToTrigger: false, loop: false, loopMs: 0, steps });
 
-    await pad.setMacro(1, "L4", []);
+    await pad.setMacro(1, KeyCode.L4, []);
     expect((await pad.readGameProfile(1)).L4.macro.enabled).toBe(false);
   });
 
@@ -202,9 +204,21 @@ describe("Cyclone2", () => {
   it("remaps a button in the game profile", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
-    await pad.remapButton(1, "A", 10);
+    await pad.remapButton(1, KeyCode.A, KeyCode.B);
     const a = (await pad.readGameProfile(1)).buttons.A;
     expect(a.mapEnabled).toBe(true);
-    expect(a.mapTo).toEqual([10, 0, 0]);
+    expect(a.mapTo).toEqual([KeyCode.B, 0, 0]);
+  });
+
+  it("records a macro on R4 from the controller", async () => {
+    const fake = new FakeController();
+    await new Cyclone2(fake).setMacroRecording(KeyCode.R4, protocol.MacroRecordState.Start);
+    expect(Array.from(fake.written.at(-1)?.slice(0, 4) ?? [])).toEqual([15, 22, 2, 1]);
+  });
+
+  it("rejects keys that are not remappable buttons or macro buttons", async () => {
+    const pad = new Cyclone2(new FakeController());
+    await expect(pad.remapButton(1, KeyCode.L4 as never, KeyCode.B)).rejects.toThrow("cannot be remapped");
+    await expect(pad.setMacro(1, KeyCode.A as never, [])).rejects.toThrow("does not take macros");
   });
 });

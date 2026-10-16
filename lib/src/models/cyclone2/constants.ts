@@ -1,3 +1,5 @@
+import type { KeyCode } from "../../core/keycodes.js";
+
 export const Cyclone2Pid = {
   Wired: 0x101d,
   WiredAdc: 0x1053,
@@ -14,5 +16,5 @@ export const LIGHT_PROFILE_SIZE = 635;
 export const LED_ZONES = ["Home", "LowerLeft", "LowerRight", "UpperLeft", "UpperRight"] as const;
 export type LedZone = (typeof LED_ZONES)[number];
 
-export const MacroButton = { L4: 1, R4: 2 } as const;
-export type MacroButton = keyof typeof MacroButton;
+/** The back buttons, the only ones that take macros. */
+export type MacroButton = typeof KeyCode.L4 | typeof KeyCode.R4;

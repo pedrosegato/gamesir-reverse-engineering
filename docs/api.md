@@ -65,15 +65,15 @@ Base de todos os modelos. `State` é o tipo do report de estado do modelo.
 |---|---|
 | `readGameProfile(n)` · `writeGameProfile(n, profile)` | lê/grava um `GameProfile` (perfis 1–5) |
 | `updateGameProfile(n, fn)` | lê, aplica `fn` e grava |
-| `remapButton(n, button, ...keys)` | mapeia um botão para até 3 `KeyCode`s; sem teclas, desfaz |
+| `remapButton(n, button, ...keys)` | mapeia um botão (`KeyCode.Up` a `KeyCode.Capture`) para até 3 `KeyCode`s; sem teclas, desfaz |
 | `setReportRate(n, rate)` | `ReportRate.Hz250`, `Hz500` ou `Hz1000` |
-| `setMacro(n, "L4" \| "R4", steps, { holdToTrigger, loop, loopMs })` | grava uma macro; sem passos, desliga |
-| `setMacroRecording("L4" \| "R4", state)` | gravação pelo controle: `protocol.MacroRecordState.Start`, `Stop` ou `Cancel` |
+| `setMacro(n, KeyCode.L4 \| KeyCode.R4, steps, { holdToTrigger, loop, loopMs })` | grava uma macro; sem passos, desliga |
+| `setMacroRecording(KeyCode.L4 \| KeyCode.R4, state)` | gravação pelo controle: `protocol.MacroRecordState.Start`, `Stop` ou `Cancel` |
 
 ```ts
-await pad.remapButton(1, "A", KeyCode.B);
+await pad.remapButton(1, KeyCode.A, KeyCode.B);
 await pad.setReportRate(1, ReportRate.Hz1000);
-await pad.setMacro(1, "L4", [
+await pad.setMacro(1, KeyCode.L4, [
   { key: KeyCode.A, holdMs: 50, delayMs: 100 },   // B começa 100 ms depois do A
   { key: KeyCode.B, holdMs: 50, delayMs: 0 },
 ], { loop: true, loopMs: 500 });
@@ -114,7 +114,7 @@ pad.onState((s) => console.log(s.batteryLevel, s.buttons.A, s.physical.buttons.A
 | `batteryLevel` · `chargeState` | `number` | % · 1 = carregando |
 | `lightConfigIndex` | `number` | animação de luz ativa |
 | `leds` | `Record<LedZone, Rgb>` | cor exibida em cada LED |
-| `macroRecording` · `macroRecordKey` | `boolean` · `"L4" \| "R4" \| null` | gravação de macro em curso |
+| `macroRecording` · `macroRecordKey` | `boolean` · `KeyCode.L4 \| KeyCode.R4 \| null` | gravação de macro em curso |
 | `raw` | `Uint8Array` | report cru |
 
 `buttons`, sticks e gatilhos do topo já passaram pelo mapeamento do perfil ativo.

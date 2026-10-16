@@ -148,6 +148,7 @@ export const KeyCode = {
 } as const;
 
 export type KeyName = keyof typeof KeyCode;
+export type KeyCode = (typeof KeyCode)[KeyName];
 
 const NAMES = new Map<number, KeyName>(Object.entries(KeyCode).map(([name, code]) => [code, name as KeyName]));
 

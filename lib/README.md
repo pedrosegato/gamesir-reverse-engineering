@@ -15,7 +15,7 @@ const pad = new Cyclone2(await NodeHidTransport.open(device.path));
 await pad.start();
 
 await pad.setStaticColor({ Home: "#00aaff" });
-await pad.remapButton(1, "A", KeyCode.B);
+await pad.remapButton(1, KeyCode.A, KeyCode.B);
 pad.onState((s) => console.log(s.batteryLevel, s.buttons.A, s.imu.accel));
 ```
 

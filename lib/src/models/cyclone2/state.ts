@@ -1,5 +1,6 @@
 import type { Rgb } from "../../core/color.js";
 import { STATE_REPORT_ID } from "../../core/constants.js";
+import { KeyCode } from "../../core/keycodes.js";
 import { LED_ZONES, type LedZone, type MacroButton } from "./constants.js";
 
 const Offset = {
@@ -170,7 +171,7 @@ export function parseState(data: ArrayLike<number>): Cyclone2State {
     lightConfigIndex: d[Offset.LightConfigIndex],
     leds,
     macroRecording: bit(macro, 0) || bit(macro, 1),
-    macroRecordKey: bit(macro, 4) ? "L4" : bit(macro, 5) ? "R4" : null,
+    macroRecordKey: bit(macro, 4) ? KeyCode.L4 : bit(macro, 5) ? KeyCode.R4 : null,
     raw: d,
   };
 }

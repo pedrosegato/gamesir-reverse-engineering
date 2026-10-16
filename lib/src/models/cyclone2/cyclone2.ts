@@ -1,16 +1,19 @@
 import type { ColorInput } from "../../core/color.js";
 import { type GameProfileNumber, Profile } from "../../core/constants.js";
 import { GameSirController } from "../../core/controller.js";
+import { KeyCode } from "../../core/keycodes.js";
 import * as P from "../../core/protocol.js";
 import type { HidTransport } from "../../transport/types.js";
-import { MacroButton } from "./constants.js";
+import type { MacroButton } from "./constants.js";
 import {
   decodeGameProfile,
   encodeGameProfile,
   type GameProfile,
+  MAPPED_BUTTONS,
   type Macro,
   type MacroStep,
   type MappedButton,
+  type MappedButtonName,
 } from "./game-profile.js";
 import {
   type Animation,
@@ -26,6 +29,20 @@ import { applyPreset, type PresetName } from "./presets.js";
 import type { Cyclone2State } from "./state.js";
 
 export type MacroOptions = Partial<Omit<Macro, "enabled" | "steps">>;
+
+function mappedButtonName(button: MappedButton): MappedButtonName {
+  const name = MAPPED_BUTTONS.find((n) => KeyCode[n] === button);
+  if (!name) throw new RangeError(`key ${button} cannot be remapped`);
+  return name;
+}
+
+/** Target ids of the macro record command. */
+const MACRO_RECORD_TARGET = { L4: 1, R4: 2 } as const;
+
+function macroButtonName(button: MacroButton): keyof typeof MACRO_RECORD_TARGET {
+  if (button !== KeyCode.L4 && button !== KeyCode.R4) throw new RangeError(`key ${button} does not take macros`);
+  return button === KeyCode.L4 ? "L4" : "R4";
+}
 
 export class Cyclone2 extends GameSirController<Cyclone2State> {
   constructor(transport: HidTransport) {
@@ -50,11 +67,12 @@ export class Cyclone2 extends GameSirController<Cyclone2State> {
     return next;
   }
 
-  async remapButton(profileNum: GameProfileNumber, button: MappedButton, ...keys: number[]): Promise<void> {
+  async remapButton(profileNum: GameProfileNumber, button: MappedButton, ...keys: KeyCode[]): Promise<void> {
     if (keys.length > 3) throw new RangeError("at most 3 keys per button");
+    const name = mappedButtonName(button);
     await this.updateGameProfile(profileNum, (p) => {
       const mapTo = [keys[0] ?? 0, keys[1] ?? 0, keys[2] ?? 0] as [number, number, number];
-      p.buttons[button] = { ...p.buttons[button], mapEnabled: keys.length > 0, mapTo };
+      p.buttons[name] = { ...p.buttons[name], mapEnabled: keys.length > 0, mapTo };
       return p;
     });
   }
@@ -65,9 +83,10 @@ export class Cyclone2 extends GameSirController<Cyclone2State> {
     steps: MacroStep[],
     { holdToTrigger = false, loop = false, loopMs = 0 }: MacroOptions = {},
   ): Promise<void> {
+    const name = macroButtonName(button);
     await this.updateGameProfile(profileNum, (p) => {
-      p[button] = {
-        ...p[button],
+      p[name] = {
+        ...p[name],
         mapEnabled: false,
         mapTo: [0, 0, 0],
         macro: { enabled: steps.length > 0, holdToTrigger, loop, loopMs, steps },
@@ -84,7 +103,7 @@ export class Cyclone2 extends GameSirController<Cyclone2State> {
   }
 
   async setMacroRecording(button: MacroButton, state: P.MacroRecordState): Promise<void> {
-    await this.send(P.setMacroRecord(MacroButton[button], state));
+    await this.send(P.setMacroRecord(MACRO_RECORD_TARGET[macroButtonName(button)], state));
   }
 
   async readLightProfile(): Promise<LightProfile> {

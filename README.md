@@ -30,8 +30,8 @@ await pad.start();
 
 await pad.setStaticColor({ Home: "#00aaff" });
 await pad.applyPreset("Rainbow", 1);
-await pad.remapButton(1, "A", KeyCode.B);
-await pad.setMacro(1, "L4", [
+await pad.remapButton(1, KeyCode.A, KeyCode.B);
+await pad.setMacro(1, KeyCode.L4, [
   { key: KeyCode.A, holdMs: 50, delayMs: 100 },
   { key: KeyCode.B, holdMs: 50, delayMs: 0 },
 ]);
