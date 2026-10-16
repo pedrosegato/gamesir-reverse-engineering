@@ -53,12 +53,12 @@ Eixos com o controle deitado, botões para cima, gatilhos para a frente:
 |---|---|---|
 | X | lateral direita | a frente (gatilhos) sobe |
 | Y | sai da face dos botões | gira no sentido anti-horário, visto de cima |
-| Z | para trás, em direção a quem segura | a lateral direita sobe (inferido pela regra da mão direita, não testado) |
+| Z | para trás, em direção a quem segura | a lateral direita sobe |
 
-Sinais do giroscópio conferidos contra o acelerômetro: com gyro X positivo a frente sobe e Z vai a −1 g; com a face virada para quem segura e gyro Y positivo, a lateral direita sobe e X vai a +1 g.
+Sinais do giroscópio conferidos contra o acelerômetro: com gyro X positivo a frente sobe e Z vai a −1 g; com a face virada para quem segura e gyro Y positivo, a lateral direita sobe e X vai a +1 g; deitado, com gyro Z positivo a lateral direita sobe e X vai a +0,9 g. Regra da mão direita nos três eixos.
 
 | | |
 |---|---|
 | Valores | crus, sem calibração |
-| Acelerômetro | 8192 LSB/g (±4 g). Offset estimado por ajuste de esfera em 5 posições paradas: X +0,09 g, Y +0,02 g, **Z −0,16 g** (resíduo < 0,1 %). Sem descontar, \|a\| parado varia de 0,83 a 1,15 g |
+| Acelerômetro | 8192 LSB/g (±4 g). Offset estimado por ajuste de esfera em 6 posições paradas: X +0,09 g, Y +0,02 g, **Z −0,16 g** (resíduo < 0,3 %). Sem descontar, \|a\| parado varia de 0,83 a 1,15 g |
 | Giroscópio | parado ≈ `8, 1, 6`. Escala estimada em 16–20 LSB por °/s (4 giros de ~90° à mão): provável ±2000 °/s (16,4 LSB por °/s) |

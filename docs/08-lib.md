@@ -74,6 +74,8 @@ button.onclick = async () => {
 |---|---|
 | `npx tsx examples/monitor.ts` | estado ao vivo (imprime quando muda entrada, bateria ou LED) |
 | `npx tsx examples/imu.ts` | giroscópio e acelerômetro, 10 linhas/s |
+| `npx tsx examples/game-profile.ts rate` | troca a taxa de report do perfil ativo, confere lendo de volta e restaura |
+| `npx tsx examples/game-profile.ts remap` | A → B por 15 s no perfil ativo e restaura |
 | `npx tsx examples/lights.ts static "#00aaff"` | cor fixa |
 | `npx tsx examples/lights.ts home "#ff0000"` | só o Home |
 | `npx tsx examples/lights.ts preset Rainbow` | preset |
