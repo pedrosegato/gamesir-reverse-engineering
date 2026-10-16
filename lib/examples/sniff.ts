@@ -10,13 +10,12 @@ const hex = (b: ArrayLike<number>, n = 24) =>
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const hex4 = (n?: number) => `0x${(n ?? 0).toString(16).padStart(4, "0")}`;
 
-const devices = (await HID.devicesAsync()).filter(
-  (d) => d.vendorId === VENDOR_ID && CYCLONE2_PIDS.includes(d.productId),
-);
-console.log("coleções do Cyclone 2:");
+const devices = (await HID.devicesAsync()).filter((d) => d.vendorId === VENDOR_ID);
+console.log("coleções GameSir (VID 0x3537):");
 for (const [i, d] of devices.entries()) {
+  const known = CYCLONE2_PIDS.includes(d.productId) ? "" : " (PID fora da tabela do app)";
   console.log(
-    `  [${i}] PID ${hex4(d.productId)} interface ${d.interface} usagePage ${hex4(d.usagePage)} usage ${hex4(d.usage)}`,
+    `  [${i}] PID ${hex4(d.productId)}${known} interface ${d.interface} usagePage ${hex4(d.usagePage)} usage ${hex4(d.usage)}`,
   );
 }
 
