@@ -4,11 +4,9 @@ Como o protocolo foi extraído do GameSir Connect e verificado no hardware.
 
 ## Fonte
 
-| Item | Detalhe |
-|---|---|
-| App | GameSir Connect 1.16.7 (Electron) |
-| Comunicação HID | `dist/electron/main.js`: webpack 4, 944 KB em uma linha |
-| Interface | `dist/electron/renderer.js`: Vue 2, 5,1 MB |
+- **App**: GameSir Connect 1.16.7 (Electron)
+- **Comunicação HID**: `dist/electron/main.js`, webpack 4, 944 KB em uma linha
+- **Interface**: `dist/electron/renderer.js`, Vue 2, 5,1 MB
 
 ## Reprodução
 
@@ -92,8 +90,6 @@ O que o código do app não dizia, ou dizia errado:
 
 ## Limites
 
-| Situação | Itens |
-|---|---|
-| Sem significado conhecido | report `0x12`: bytes 10, 12 e 25–34 · perfil de luz: `UserEffectIndex` · perfil de jogo: campos de áudio |
-| Não verificado | PIDs `0x101D` e `0x102A` · `0F 16 k 00` (cancelar gravação) · `0F FD` (calibração) · gravação de "device id" |
-| Fora do escopo | atualização de firmware · Bluetooth · controles da família DLL |
+- **Sem significado conhecido**: report `0x12`: bytes 10, 12 e 25–34 · perfil de luz: `UserEffectIndex` · perfil de jogo: campos de áudio
+- **Não verificado**: PIDs `0x101D` e `0x102A` · `0F 16 k 00` (cancelar gravação) · `0F FD` (calibração) · gravação de "device id"
+- **Fora do escopo**: atualização de firmware · Bluetooth · controles da família DLL

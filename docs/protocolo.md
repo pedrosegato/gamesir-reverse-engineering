@@ -114,11 +114,9 @@ Valores crus, sem calibração. Eixos com o controle deitado, botões para cima:
 | Y | fora da face | o controle gira no sentido anti-horário, visto de cima |
 | Z | trás (quem segura) | a lateral direita sobe |
 
-| Campo | Valor |
-|---|---|
-| Acelerômetro | 8192 LSB/g (±4 g). Offset: X +0,09 g, Y +0,02 g, Z −0,16 g |
-| Giroscópio | cerca de 16,4 LSB por °/s (±2000 °/s, estimado). Em repouso: ≈ (8, 1, 6) |
-| Contador | cerca de 780 por segundo; dá a volta em 255 |
+- **Acelerômetro**: 8192 LSB/g (±4 g). Offset: X +0,09 g, Y +0,02 g, Z −0,16 g
+- **Giroscópio**: cerca de 16,4 LSB por °/s (±2000 °/s, estimado). Em repouso: ≈ (8, 1, 6)
+- **Contador**: cerca de 780 por segundo; dá a volta em 255
 
 ## Perfis
 
@@ -226,12 +224,10 @@ Códigos de tecla (tabela completa em `lib/src/keycodes.ts`): 1–20 botões do 
 
 Execução:
 
-| Item | Comportamento |
-|---|---|
-| `delay` | do início do passo ao início do próximo; se for menor que o `hold`, os passos se sobrepõem |
-| Loop | recomeça `intervalo` ms depois do fim do último passo |
-| Single Press (bit 1 = 0) | um toque executa a sequência inteira; outro toque interrompe; com loop, repete até o próximo toque |
-| Long Press (bit 1 = 1) | executa enquanto o botão estiver pressionado; soltar interrompe na hora; com loop, repete enquanto pressionado |
+- `delay`: do início do passo ao início do próximo; se for menor que o `hold`, os passos se sobrepõem
+- Loop: recomeça `intervalo` ms depois do fim do último passo
+- Single Press (bit 1 = 0): um toque executa a sequência inteira; outro toque interrompe; com loop, repete até o próximo toque
+- Long Press (bit 1 = 1): executa enquanto o botão estiver pressionado; soltar interrompe na hora; com loop, repete enquanto pressionado
 
 O app grava macros com o mapeamento do botão desligado (`+2` = 0).
 

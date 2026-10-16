@@ -53,21 +53,17 @@ Writes take effect immediately and only send the bytes that changed.
 
 ## Examples
 
-| Example | What it does |
-|---|---|
-| [`battery-led`](examples/battery-led) | battery level on the controller LEDs; also a Windows tray app on the [releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases) page |
-| [`lights.ts`](examples/lights.ts) | static colors, presets and the active animation |
-| [`vibrate.ts`](examples/vibrate.ts) | vibration |
+- [`battery-led`](examples/battery-led): battery level on the controller LEDs; also a Windows tray app on the [releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases) page
+- [`lights.ts`](examples/lights.ts): static colors, presets and the active animation
+- [`vibrate.ts`](examples/vibrate.ts): vibration
 
 ## Docs
 
 Written in Portuguese.
 
-| Doc | Contents |
-|---|---|
-| [docs/api.md](docs/api.md) | API reference |
-| [docs/protocolo.md](docs/protocolo.md) | HID protocol: packets, commands, state report, profile layouts |
-| [docs/engenharia-reversa.md](docs/engenharia-reversa.md) | how the protocol was extracted from the app and verified on the device |
+- [docs/api.md](docs/api.md): API reference
+- [docs/protocolo.md](docs/protocolo.md): HID protocol (packets, commands, state report, profile layouts)
+- [docs/engenharia-reversa.md](docs/engenharia-reversa.md): how the protocol was extracted from the app and verified on the device
 
 ## License
 
