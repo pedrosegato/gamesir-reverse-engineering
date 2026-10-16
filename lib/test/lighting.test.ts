@@ -13,8 +13,8 @@ import {
   PRESETS,
 } from "../src/index.js";
 
-/** O mesmo perfil que `generate_light_profile()` monta em example-scripts/debug_led_cyclone.py. */
-function pythonScriptProfile(slot: number, r: number, g: number, b: number): number[] {
+/** Perfil de luz montado byte a byte, como nos primeiros testes no hardware: cor fixa num slot, 5 animações iguais. */
+function handBuiltProfile(slot: number, r: number, g: number, b: number): number[] {
   const anim = [1, 5, 0, 100];
   for (let i = 0; i < 5; i++) anim.push(...(i === slot ? [r, g, b] : [0, 0, 0]));
   for (let i = 0; i < 7; i++) anim.push(...new Array(15).fill(0));
@@ -25,19 +25,19 @@ function pythonScriptProfile(slot: number, r: number, g: number, b: number): num
 }
 
 describe("perfil de luz", () => {
-  it("tem 635 bytes, igual aos scripts de teste", () => {
-    expect(pythonScriptProfile(0, 1, 2, 3)).toHaveLength(LIGHT_PROFILE_SIZE);
+  it("tem 635 bytes, igual ao montado à mão", () => {
+    expect(handBuiltProfile(0, 1, 2, 3)).toHaveLength(LIGHT_PROFILE_SIZE);
   });
 
   it("slot 3 do frame é o Home, como o script de bateria usa", () => {
     expect(FRAME_ZONE_ORDER[3]).toBe("Home");
-    const p = decodeLightProfile(pythonScriptProfile(3, 255, 128, 0));
+    const p = decodeLightProfile(handBuiltProfile(3, 255, 128, 0));
     expect(p.animations[0].frames[0].Home).toEqual({ r: 255, g: 128, b: 0 });
     expect(p.animations[0].frames[0].LowerLeft).toEqual({ r: 0, g: 0, b: 0 });
   });
 
   it("decodifica cabeçalho e trailer", () => {
-    const p = decodeLightProfile(pythonScriptProfile(0, 9, 9, 9));
+    const p = decodeLightProfile(handBuiltProfile(0, 9, 9, 9));
     const a = p.animations[0];
     expect(p.activeAnimation).toBe(0);
     expect(a.keyFrameCount).toBe(1);
@@ -51,7 +51,7 @@ describe("perfil de luz", () => {
   });
 
   it("ida e volta preserva os bytes", () => {
-    const bytes = pythonScriptProfile(1, 10, 20, 30);
+    const bytes = handBuiltProfile(1, 10, 20, 30);
     bytes[LightOffset.ConfigIndex] = 2;
     bytes[LightOffset.animation(1) + 2] = 7;
     bytes[LightOffset.Reserved + 3] = 0xaa;
@@ -67,7 +67,7 @@ describe("perfil de luz", () => {
   });
 
   it("diff encontra só o trecho alterado", () => {
-    const a = pythonScriptProfile(0, 1, 1, 1);
+    const a = handBuiltProfile(0, 1, 1, 1);
     const b = a.slice();
     b[10] = 99;
     b[20] = 99;
@@ -78,7 +78,7 @@ describe("perfil de luz", () => {
 
 describe("presets", () => {
   it("Flow gera os bytes do app (frame 0: LL LR UL Home UR)", () => {
-    const profile = decodeLightProfile(pythonScriptProfile(0, 0, 0, 0));
+    const profile = decodeLightProfile(handBuiltProfile(0, 0, 0, 0));
     profile.animations[0] = applyPreset(animation([{}]), "Flow");
     const bytes = encodeLightProfile(profile);
     const start = LightOffset.animation(0);

@@ -8,7 +8,7 @@
 | Extração | `app.asar` → `decompiled/` |
 | `dist/electron/main.js` | 944 KB, 1 linha, webpack 4 — toda a comunicação HID |
 | `dist/electron/renderer.js` | 5,1 MB, 21 linhas, Vue 2 + Vuex — interface |
-| Ferramentas | Node 22, Prettier 3.8.1, scripts Python de `example-scripts/` (validação no hardware) |
+| Ferramentas | Node 22, Prettier 3.8.1; no hardware, os exemplos da lib (`lib/examples/`) |
 
 ## Preparação
 
@@ -40,5 +40,5 @@
 
 ## Validação
 
-- Testes da lib (`lib/test/`) reproduzem byte a byte os pacotes dos scripts Python.
-- O que não passou pelo controle está marcado como **não verificado**.
+- Testes da lib (`lib/test/`) conferem os codecs contra um dump real do controle e contra perfis montados byte a byte.
+- No hardware: [09](09-validacao-no-hardware.md). O que não passou pelo controle está marcado como **não verificado**.
