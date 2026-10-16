@@ -69,7 +69,7 @@ Tabela completa em `lib/src/keycodes.ts` (gerada do `ko`).
 | Offset | Campo |
 |---|---|
 | +0..+6 | igual a botão |
-| +7 | bit 0 macro ligada · bit 1 modo "Hold" (desligado = "Press") · bit 2 loop |
+| +7 | bit 0 macro ligada · bit 1 "Long Press" (desligado = "Single Press") · bit 2 loop |
 | +8..+9 | intervalo do loop, ms |
 | +10 | nº de passos, 0–30 |
 | +11..+155 | passos 1–29: `tecla, hold ms (2 B), delay ms (2 B)` |
@@ -77,7 +77,17 @@ Tabela completa em `lib/src/keycodes.ts` (gerada do `ko`).
 
 - O app grava macro com mapeamento desligado (`+2` = 0, teclas 0) e bit 0 ligado quando há passos.
 - **`delay` = do início do passo ao início do próximo**; o hold fica dentro dele. Medido com A, B, X, Y a 200/300 ms: hold 194–206 ms, início → início 294–306 ms, solto → próximo 100 ms. `delay` < hold sobrepõe os passos.
-- Modo "Press" (medido): um toque inicia a macro, que roda inteira mesmo segurando o botão; outro toque durante a execução interrompe. "Hold" e loop: não testados.
+
+Comportamento medido (A, B, X, Y a 200/300 ms, último passo com delay 0, loop de 1000 ms):
+
+| Modo | Loop | Comportamento |
+|---|---|---|
+| Single Press | não | um toque toca a sequência inteira, mesmo segurando; outro toque no meio interrompe |
+| Long Press | não | toca uma vez enquanto segura; segurando 0,6–0,8 s além do fim, não repete. Soltar no meio: não testado |
+| Single Press | sim | um toque inicia e repete sozinho; outro toque para |
+| Long Press | sim | repete enquanto segura; parou ao soltar no intervalo entre voltas |
+
+- **Loop: recomeça `loopMs` depois do fim do último passo** (medido 1001–1013 ms), não do início. Volta completa: 3 × 300 + 200 + 1000 = 2100 ms (medido 2091–2116).
 - UI: "Trigger Method" = "Single Press" (bit 1 desligado) ou "Long Press" (ligado); "Loop" é uma chave à parte. O intervalo do loop (`cycleTime`, +8..+9) aparece no campo de delay do último passo (`renderer.js:13521`).
 
 ## Gatilhos LT / RT (28 B)

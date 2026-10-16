@@ -54,9 +54,10 @@ export interface MacroStep {
 
 export interface Macro {
   enabled: boolean;
-  /** "Hold" no app; desligado = "Press": um toque inicia, outro toque durante a execução interrompe. */
+  /** "Long Press" no app: toca enquanto o botão estiver pressionado. Desligado = "Single Press": um toque inicia, outro interrompe. */
   holdToTrigger: boolean;
   loop: boolean;
+  /** Do fim do último passo até recomeçar (medido com delay 0 no último passo). */
   loopMs: number;
   steps: MacroStep[];
 }

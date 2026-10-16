@@ -43,7 +43,7 @@ const MODE_TESTS = [
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const [command] = process.argv.slice(2);
+const [command, arg] = process.argv.slice(2);
 const pad = await openFirstCyclone2();
 const profile = (await pad.readCurrentProfile()) as GameProfileNumber;
 console.log(`perfil ativo: ${profile === 5 ? "Shift" : profile}`);
@@ -146,6 +146,7 @@ async function testMacro(): Promise<void> {
 async function testMacroModes(): Promise<void> {
   pendingRestore = await pad.readGameProfile(profile);
   for (const [i, test] of MODE_TESTS.entries()) {
+    if (arg && Number(arg) !== i + 1) continue;
     await pad.setMacro(profile, "L4", TEST_MACRO, test.options);
     console.log(`\n[${i + 1}/${MODE_TESTS.length}] ${test.name}`);
     console.log(`L4 gravado: ${describeBackButton((await pad.readGameProfile(profile)).L4)}`);
