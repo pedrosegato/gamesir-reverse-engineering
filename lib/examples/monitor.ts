@@ -19,7 +19,6 @@ function describe(s: GamepadState): string {
     `hat ${s.hat ?? "-"}`,
     `[${pressed}]`,
     `anim ${s.lightConfigIndex}`,
-    `imu ${[...s.imu.gyro, ...s.imu.accel].map((v) => String(v).padStart(6)).join("")}`,
     `Home ${rgb(s.leds.Home)} LL ${rgb(s.leds.LowerLeft)} LR ${rgb(s.leds.LowerRight)} UR ${rgb(s.leds.UpperRight)}`,
   ].join(" | ");
 }

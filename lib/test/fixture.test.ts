@@ -50,6 +50,6 @@ describe("dump real do controle", () => {
     expect(s.batteryLevel).toBe(0x35);
     expect(s.hat).toBeNull();
     expect(s.leds.Home).toEqual({ r: 80, g: 255, b: 0 });
-    expect(s.imu.accel[2]).toBe(8087);
+    expect(s.imu).toEqual({ counter: 89, gyro: [7, 1, 4], accel: [543, 8087, -29] });
   });
 });

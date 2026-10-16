@@ -14,9 +14,12 @@
 | 6 | 6 / 7 | LS / RS (clique) | L3 / R3 |
 | 7 | 0 / 1 | Home / Capture | PS / Camera |
 | 8, 9 | | LT, RT analógicos 0–255 | |
-| 10 | | não mapeado (variou entre capturas) | |
-| 11–22 | | **provável IMU**: 6 × int16 LE; parado na mesa: `89 7 1 / 4 543 8087` (8087 ≈ 1 g a ±4 g). Ordem gyro/accel não confirmada | |
-| 23–34 | | não mapeado | |
+| 10 | | não mapeado (`0x20` nas capturas) | |
+| 11 | | contador da IMU, 8 bits; avança ~3 por report e dá a volta em 255 | |
+| 12 | | não mapeado (sempre `0`) | |
+| 13–18 | | **giroscópio**: 3 × int16 LE; parado: `7, 1, 4` | |
+| 19–24 | | **acelerômetro**: 3 × int16 LE; parado na mesa: `543, 8087, -29` → \|a\| ≈ 8105 ≈ 1 g (8192 LSB/g, faixa ±4 g) | |
+| 25–34 | | não mapeado | |
 | 35 | | carregando = 1 | `chargeState` |
 | 36 | | bateria % | `batteryLevel` |
 | 37 | | animação de luz ativa | `ConfigIndex` |
@@ -32,10 +35,11 @@
 
 - Ordem das cores: array `au` (`main.app.js:8052`). **Difere da ordem do frame** no perfil de luz ([06](06-perfil-de-luz.md)).
 - As cores são as renderizadas no momento (animação + brilho).
+- IMU: nenhum parser do app (`ie`, `parseGamepadState`) lê os bytes 10–34. Layout tirado do hardware: os valores mudam ao mexer o controle e o acelerômetro parado mede 1 g. Qual eixo é qual: não confirmado (`examples/imu.ts`).
 - Bytes não mapeados: investigar com `pad.onRaw()` movendo o controle.
-- Confirmado no hardware: bateria (36), cor do Home (38–40), analógico esquerdo, ABXY, hat solto = `0xF`.
+- Confirmado no hardware: bateria (36), cor do Home (38–40), analógico esquerdo, ABXY, hat solto = `0xF`, animação ativa (37), IMU.
 
 ```ts
 await pad.start();
-pad.onState((s) => console.log(s.batteryLevel, s.chargeState, s.buttons.A, s.leftStick, s.leds.Home));
+pad.onState((s) => console.log(s.batteryLevel, s.chargeState, s.buttons.A, s.leftStick, s.leds.Home, s.imu.accel));
 ```

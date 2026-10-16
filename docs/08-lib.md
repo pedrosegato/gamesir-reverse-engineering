@@ -72,7 +72,8 @@ button.onclick = async () => {
 
 | Comando | Faz |
 |---|---|
-| `npx tsx examples/monitor.ts` | estado ao vivo |
+| `npx tsx examples/monitor.ts` | estado ao vivo (imprime quando muda entrada, bateria ou LED) |
+| `npx tsx examples/imu.ts` | giroscópio e acelerômetro, 10 linhas/s |
 | `npx tsx examples/lights.ts static "#00aaff"` | cor fixa |
 | `npx tsx examples/lights.ts home "#ff0000"` | só o Home |
 | `npx tsx examples/lights.ts preset Rainbow` | preset |

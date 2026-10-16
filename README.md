@@ -71,18 +71,12 @@ Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
 | Versão de firmware, perfil ativo, leitura de todos os perfis | ✅ |
 | Layout do perfil de jogo e de luz vs dump real (ida e volta idêntica) | ✅ |
 | Vibração | ✅ |
-| Escrita de perfil (luz, jogo) | pendente |
-| IMU nos bytes 11–22 | pendente |
-| Posição física da luz 4 | pendente |
+| Escrita do perfil de luz: cor fixa, só Home, preset, troca de animação | ✅ |
+| Luz 4 = LED do centro | ✅ |
+| IMU: contador (11), giroscópio (13–18), acelerômetro (19–24) | ✅ layout · nome dos eixos pendente |
+| Escrita do perfil de jogo (remapeamento, taxa de report, macro) | pendente |
+| Gravação de macro pelo controle (`0F 16`) | pendente |
 | Cabo, Bluetooth | pendente |
-
----|---|
-| Report `0x12`: bateria, analógico esquerdo, ABXY, cor do Home | ✅ dongle `0x100B`, Windows |
-| Heartbeat liga o report `0x12` | ✅ |
-| Respostas a comandos (`0F 09`, `0F 04`) | ❌ não chegam na lib — investigando com `examples/sniff.ts` |
-| Perfil de jogo vs dump real | pendente |
-| Posição física da luz 4 | pendente |
-| Resposta a WriteProfile/SwitchProfile | pendente |
 
 ---
 

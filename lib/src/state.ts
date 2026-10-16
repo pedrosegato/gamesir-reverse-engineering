@@ -11,7 +11,9 @@ const Offset = {
   System: 7,
   LeftTrigger: 8,
   RightTrigger: 9,
-  Imu: 11,
+  ImuCounter: 11,
+  Gyro: 13,
+  Accel: 19,
   ChargeState: 35,
   BatteryLevel: 36,
   LightConfigIndex: 37,
@@ -52,8 +54,10 @@ export interface Buttons {
   M: boolean;
 }
 
-/** Bytes 11–22 como 6 × int16 LE. Ordem gyro/acelerômetro ainda não confirmada. */
+/** Valores crus int16. Parado na mesa, |accel| ≈ 8192 (1 g). Nome dos eixos ainda não confirmado. */
 export interface Imu {
+  /** Contador de 8 bits, avança a cada amostra. */
+  counter: number;
   gyro: [number, number, number];
   accel: [number, number, number];
 }
@@ -97,7 +101,11 @@ export function parseState(data: ArrayLike<number>): GamepadState {
   const macro = d[Offset.MacroRecord];
   const hatValue = face & 0x0f;
   const view = new DataView(d.buffer, d.byteOffset, d.byteLength);
-  const i16 = (n: number) => view.getInt16(Offset.Imu + n * 2, true);
+  const vec3 = (o: number): [number, number, number] => [
+    view.getInt16(o, true),
+    view.getInt16(o + 2, true),
+    view.getInt16(o + 4, true),
+  ];
 
   const leds = {} as Record<LedZone, Rgb>;
   LED_ZONES.forEach((zone, i) => {
@@ -130,7 +138,7 @@ export function parseState(data: ArrayLike<number>): GamepadState {
     },
     leftTrigger: d[Offset.LeftTrigger],
     rightTrigger: d[Offset.RightTrigger],
-    imu: { gyro: [i16(0), i16(1), i16(2)], accel: [i16(3), i16(4), i16(5)] },
+    imu: { counter: d[Offset.ImuCounter], gyro: vec3(Offset.Gyro), accel: vec3(Offset.Accel) },
     chargeState: d[Offset.ChargeState],
     batteryLevel: d[Offset.BatteryLevel],
     lightConfigIndex: d[Offset.LightConfigIndex],

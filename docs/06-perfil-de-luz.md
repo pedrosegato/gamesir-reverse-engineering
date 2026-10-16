@@ -49,10 +49,10 @@ Fontes: codec `Ks` (`main.app.js:7923`), editor do C2 (`renderer.js:135161`, rot
 | 1 | +3..+5 | `LowerRight` | lateral direita | 3 |
 | 2 | +6..+8 | `UpperLeft` | sem LED (UI não edita) | — |
 | 3 | +9..+11 | `Home` | botão Home | 2 |
-| 4 | +12..+14 | `UpperRight` | centro inferior, junto ao botão M (pela UI) | 4 |
+| 4 | +12..+14 | `UpperRight` | centro, junto ao botão M | 4 |
 
-- Slot 3 = Home também confirmado pelo `gamesir_rgb_battery.pyw`.
-- Luz 4: a UI aponta para o centro inferior, junto ao botão M; o espelho ao vivo pinta essa cor em 4 barras de indicador de perfil (1–4). Posição física **não verificada**.
+- Confirmado no hardware: cor só no slot 3 acende só o Home; cor nos 5 slots acende 4 LEDs (Home, as duas laterais e o do centro = luz 4), o que bate com o slot 2 sem LED.
+- Luz 4: o espelho ao vivo da UI pinta essa cor em 4 barras de indicador de perfil (1–4).
 
 ## Presets
 
@@ -78,6 +78,8 @@ Reset da tela: `StandbyTime` 10, `RaiseWakeUp` ligado, `AudioReactiveMode` desli
 | Sai da tela | volta a tocar |
 
 Cada edição regrava o perfil (debounce de 300 ms); o controle mostra o resultado após a escrita.
+
+Validado com a lib: escrita de cor fixa, preset (Rainbow) e troca de animação ativa (`ConfigIndex`, refletido no byte 37 do `0x12`).
 
 ## Lib
 
