@@ -1,14 +1,12 @@
 import {
-  type BackButton,
-  type Buttons,
   type GameProfile,
   type GameProfileNumber,
   KeyCode,
-  keyName,
   type MacroStep,
   protocol,
   ReportRate,
 } from "../src/index.js";
+import { describeBackButton, pressed } from "./_format.js";
 import { openFirstCyclone2 } from "./_open.js";
 
 const WATCH_SECONDS = 15;
@@ -59,30 +57,6 @@ async function restore(): Promise<void> {
   await pad.writeGameProfile(profile, pendingRestore);
   pendingRestore = null;
   console.log("perfil restaurado");
-}
-
-const pressed = (b: Buttons) =>
-  Object.entries(b)
-    .filter(([, down]) => down)
-    .map(([name]) => name)
-    .join(" ") || "-";
-
-const describeMacro = (steps: MacroStep[]) =>
-  steps.map((s) => `${keyName(s.key) ?? s.key} ${s.holdMs}/${s.delayMs} ms`).join(", ") || "(vazia)";
-
-const keyList = (keys: number[]) =>
-  keys
-    .filter(Boolean)
-    .map((k) => keyName(k) ?? k)
-    .join(" + ");
-
-function describeBackButton({ macro, mapEnabled, mapTo }: BackButton): string {
-  if (macro.enabled) {
-    const mode = [macro.holdToTrigger ? "Long Press" : "Single Press", macro.loop ? `loop ${macro.loopMs} ms` : ""];
-    return `macro (${mode.filter(Boolean).join(", ")}): ${describeMacro(macro.steps)}`;
-  }
-  if (mapEnabled) return `mapeado para ${keyList(mapTo)}`;
-  return "sem mapeamento";
 }
 
 /** Imprime físico × saída a cada mudança, com o tempo desde o início. */

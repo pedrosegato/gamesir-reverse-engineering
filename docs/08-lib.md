@@ -75,6 +75,7 @@ button.onclick = async () => {
 | Comando | Faz |
 |---|---|
 | `npx tsx examples/check.ts` | diagnóstico: modo de conexão, firmware, ritmo do `0x12`, bateria, leitura dos perfis, vibração e LED (restaura a luz) |
+| `npx tsx examples/probe.ts` | resposta a WriteProfile/SwitchProfile, leitura de "device info", parar e cancelar gravação de macro (restaura o perfil) |
 | `npx tsx examples/monitor.ts` | estado ao vivo (imprime quando muda entrada, bateria ou LED) |
 | `npx tsx examples/imu.ts` | giroscópio e acelerômetro, 10 linhas/s |
 | `npx tsx examples/game-profile.ts rate` | troca a taxa de report do perfil ativo, confere lendo de volta e restaura |
