@@ -38,7 +38,7 @@ export const PROPOSALS: Readonly<Record<IndicatorKey, Proposal>> = {
   critical: alert("#ff0000"),
   low: solid("#ff0000"),
   medium: solid("#ffcc00"),
-  good: solid("#66ff33"),
+  good: solid("#a0ff00"),
   high: solid("#00a000"),
   charged: alert("#ffffff"),
   charging: { animation: indicatorsFor("Home").charging.animation },
