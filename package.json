@@ -7,17 +7,23 @@
   ],
   "scripts": {
     "battery-led": "tsx examples/battery-led/index.ts",
+    "battery-tray": "tsx examples/battery-led/tray/main.ts",
+    "build:battery-tray": "tsx examples/battery-led/tray/build.ts",
     "typecheck": "tsc -p tsconfig.json && npm run typecheck -w lib",
     "lint": "biome check",
     "test": "vitest run",
     "check": "npm run typecheck && npm run lint && npm test"
   },
   "dependencies": {
+    "koffi": "^3.3.3",
     "node-hid": "^3.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
     "@types/node": "^22.0.0",
+    "esbuild": "^0.28.2",
+    "postject": "^1.0.0-alpha.6",
+    "resedit": "^3.1.0",
     "tsx": "^4.19.0",
     "typescript": "~5.9.3",
     "vitest": "^3.2.0"

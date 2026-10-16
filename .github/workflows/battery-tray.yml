@@ -4,7 +4,12 @@ on:
   push:
     branches: [main]
     tags: ["battery-tray-v*"]
-    paths: ["apps/battery-tray/**", ".github/workflows/battery-tray.yml"]
+    paths:
+      - "examples/battery-led/**"
+      - "lib/src/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/battery-tray.yml"
   workflow_dispatch:
     inputs:
       version:
@@ -17,18 +22,14 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: apps/battery-tray
     steps:
       - uses: actions/checkout@v4
-      - run: cargo test --locked
-      - run: cargo clippy --release --locked -- -D warnings
-      - run: cargo build --release --locked
-      - uses: actions/upload-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: cyclone2-battery
-          path: apps/battery-tray/target/release/cyclone2-battery.exe
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
       - id: version
         shell: bash
         env:
@@ -38,11 +39,26 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/battery-tray-v* ]]; then number=${GITHUB_REF_NAME#battery-tray-v}; fi
           if [[ -n $number && ! $number =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "invalid version: $number"; exit 1; fi
           echo "number=$number" >> "$GITHUB_OUTPUT"
+      - shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.number }}
+        run: npm run build:battery-tray -- --version "${VERSION:-0.0.0}"
+      - name: self-test
+        shell: pwsh
+        timeout-minutes: 3
+        run: |
+          $run = Start-Process -FilePath examples/battery-led/tray/dist/cyclone2-battery.exe -ArgumentList '--self-test', 'self-test.json' -Wait -PassThru
+          Get-Content self-test.json
+          exit $run.ExitCode
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cyclone2-battery
+          path: examples/battery-led/tray/dist/cyclone2-battery.exe
       - if: steps.version.outputs.number != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: battery-tray-v${{ steps.version.outputs.number }}
           target_commitish: ${{ github.sha }}
           name: cyclone2-battery ${{ steps.version.outputs.number }}
-          body_path: apps/battery-tray/RELEASE.md
-          files: apps/battery-tray/target/release/cyclone2-battery.exe
+          body_path: examples/battery-led/tray/RELEASE.md
+          files: examples/battery-led/tray/dist/cyclone2-battery.exe

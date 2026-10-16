@@ -14,5 +14,5 @@
       "gamesir-hid/node": ["./lib/src/transport/node-hid.ts"]
     }
   },
-  "include": ["examples", "tools/hardware"]
+  "include": ["examples", "tools/hardware", "vitest.config.ts"]
 }

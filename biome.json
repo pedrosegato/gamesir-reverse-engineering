@@ -7,7 +7,16 @@
     "root": "."
   },
   "files": {
-    "includes": ["lib/src/**", "lib/test/**", "lib/*.json", "examples/**", "tools/**/*.ts", "tools/**/*.cjs", "*.json"]
+    "includes": [
+      "lib/src/**",
+      "lib/test/**",
+      "lib/*.json",
+      "examples/**",
+      "tools/**/*.ts",
+      "tools/**/*.cjs",
+      "*.json",
+      "vitest.config.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

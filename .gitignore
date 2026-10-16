@@ -31,5 +31,3 @@ npm-debug.log*
 Thumbs.db
 desktop.ini
 
-# Rust
-target/

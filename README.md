@@ -53,9 +53,7 @@ Writes take effect immediately and only send the bytes that changed.
 
 ## Examples
 
-[`examples/`](examples) has a few usage examples. The main one is [`battery-led`](examples/battery-led), which shows the battery level on the Home LED: `npm install`, then `npm run battery-led`.
-
-[`apps/battery-tray`](apps/battery-tray) is the same battery indicator as a native Windows tray app (Rust, single 0.5 MB `.exe`, optional start with Windows).
+[`examples/`](examples) has a few usage examples. The main one is [`battery-led`](examples/battery-led), which shows the battery level on the Home LED: `npm install`, then `npm run battery-led`. The same code also ships as a Windows tray app, a single `.exe` on the [releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases) page.
 
 ## Docs
 

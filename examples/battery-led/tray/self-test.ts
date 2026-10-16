@@ -1,0 +1,104 @@
+import { spawn } from "node:child_process";
+import { writeFileSync } from "node:fs";
+import { isSea } from "node:sea";
+import { toRgb } from "gamesir-hid";
+import { findControllers } from "gamesir-hid/node";
+import { isAutostartEnabled, setAutostart } from "./autostart.js";
+import { CALLBACK_MESSAGE, Tray } from "./tray.js";
+import { STRUCT_SIZES, WM_RBUTTONUP } from "./win32.js";
+
+const WINDOW_NAME = "Cyclone2BatterySelfTest";
+const EXPECTED_SIZES = { MSG: 48, WNDCLASSEXW: 80, NOTIFYICONDATAW: 976 };
+const MENU_TIMEOUT_MS = 30_000;
+
+/** Simula o clique no ícone e escolhe o último item do menu com ↑ + Enter; Esc fecha o menu se nada for escolhido. */
+const CLICK_LAST_MENU_ITEM = `
+Add-Type -Namespace SelfTest -Name User32 -MemberDefinition @'
+[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowW(string cls, string name);
+[DllImport("user32.dll")] public static extern bool PostMessageW(IntPtr hwnd, uint msg, UIntPtr wParam, IntPtr lParam);
+'@
+function Wait-Window($class) {
+  for ($i = 0; $i -lt 50; $i++) {
+    $hwnd = [SelfTest.User32]::FindWindowW($class, [NullString]::Value)
+    if ($hwnd -ne [IntPtr]::Zero) { return $hwnd }
+    Start-Sleep -Milliseconds 200
+  }
+  exit 1
+}
+function Send-Key($hwnd, $key) {
+  [SelfTest.User32]::PostMessageW($hwnd, 0x100, [UIntPtr]::new($key), [IntPtr]::Zero) | Out-Null
+  [SelfTest.User32]::PostMessageW($hwnd, 0x101, [UIntPtr]::new($key), [IntPtr]::Zero) | Out-Null
+}
+$app = Wait-Window '${WINDOW_NAME}'
+"app $app"
+"posted " + [SelfTest.User32]::PostMessageW($app, ${CALLBACK_MESSAGE}, [UIntPtr]::Zero, [IntPtr]${WM_RBUTTONUP})
+$menu = Wait-Window '#32768'
+"menu $menu"
+Send-Key $menu 0x26
+Send-Key $menu 0x0D
+Start-Sleep -Seconds 3
+if ([SelfTest.User32]::FindWindowW('#32768', [NullString]::Value) -ne [IntPtr]::Zero) { "escape"; Send-Key $menu 0x1B }
+`;
+
+interface MenuResult {
+  readonly chosen: boolean;
+  readonly opened: number;
+  readonly helper: string;
+}
+
+function chooseFromMenu(): Promise<MenuResult> {
+  return new Promise((resolve) => {
+    let opened = 0;
+    let helper = "";
+    const finish = (chosen: boolean) => {
+      clearTimeout(timer);
+      resolve({ chosen, opened, helper: helper.trim() });
+    };
+    const timer = setTimeout(() => finish(false), MENU_TIMEOUT_MS);
+    const tray = new Tray({
+      name: WINDOW_NAME,
+      tooltip: "self-test",
+      icon: toRgb("#808080"),
+      menu: () => {
+        opened++;
+        return [{ label: "status" }, "separator", { label: "último", onClick: () => finish(true) }];
+      },
+    });
+    tray.update("self-test 2", toRgb("#00ff00"));
+    const child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", CLICK_LAST_MENU_ITEM], {
+      windowsHide: true,
+    });
+    const collect = (data: Buffer) => {
+      helper += data.toString();
+    };
+    child.stdout.on("data", collect);
+    child.stderr.on("data", collect);
+    child.on("exit", (code) => collect(Buffer.from(`\nexit ${code}`)));
+  });
+}
+
+function autostartRoundTrip(): boolean {
+  const before = isAutostartEnabled();
+  const on = setAutostart(true, process.execPath) && isAutostartEnabled();
+  const off = setAutostart(false, process.execPath) && !isAutostartEnabled();
+  setAutostart(before, process.execPath);
+  return on && off;
+}
+
+/** Verificação do executável no CI: carrega os módulos nativos e exercita a API do Windows, menu incluído. */
+export async function selfTest(output: string): Promise<boolean> {
+  const sizesMatch = Object.entries(EXPECTED_SIZES).every(
+    ([name, size]) => STRUCT_SIZES[name as keyof typeof STRUCT_SIZES] === size,
+  );
+  const report: Record<string, unknown> = { sea: isSea(), sizes: STRUCT_SIZES, sizesMatch };
+  try {
+    report.menu = await chooseFromMenu();
+    report.controllers = (await findControllers()).length;
+    report.autostart = autostartRoundTrip();
+  } catch (error) {
+    report.error = (error as Error).stack ?? String(error);
+  }
+  report.ok = sizesMatch && (report.menu as MenuResult | undefined)?.chosen === true && report.autostart === true;
+  writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`);
+  return report.ok === true;
+}
