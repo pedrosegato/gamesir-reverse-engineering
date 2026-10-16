@@ -37,7 +37,7 @@ UTF-8, completado com `00`. Bug do app: nome > 32 B é cortado em 31 e a imagem 
 | 43 | trava de diagonais do D-pad | bit 0 |
 | 44 | troca ABXY no XInput | bit 0 |
 | 45 | troca ABXY no Switch | bit 0 |
-| **46** | **taxa de report** | **0 = 250 Hz, 1 = 500 Hz, 2 = 1000 Hz** |
+| **46** | **taxa de report** | **0 = 250 Hz, 1 = 500 Hz, 2 = 1000 Hz**; não muda o ritmo do report `0x12` |
 | 47–63 | reservado | devolvido como lido |
 
 ## Botões (64–175)
@@ -147,4 +147,4 @@ await pad.remapButton(1, "X", KeyCode.Y);
 await pad.setReportRate(1, ReportRate.Hz500);
 ```
 
-Validado contra um dump real (`lib/test/fixtures/dump-dongle-fw346.json`): os 5 perfis decodificam e recodificam idênticos, e os valores batem com os padrões do app (motores 75, deadzone de gatilho 5–95, gyro desativado = 255, saída do Tilt = analógico direito). Escrita ainda não testada.
+Validado contra um dump real (`lib/test/fixtures/dump-dongle-fw346.json`): os 5 perfis decodificam e recodificam idênticos, e os valores batem com os padrões do app (motores 75, deadzone de gatilho 5–95, gyro desativado = 255, saída do Tilt = analógico direito). Escrita validada (`examples/game-profile.ts`, perfil 1): taxa de report gravada e lida de volta; A → B vale na hora (bytes 1–9 do `0x12` passam a mostrar B); restauração devolve o perfil original. Macro ainda não testada.

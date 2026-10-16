@@ -64,6 +64,7 @@ button.onclick = async () => {
 | | `setMacroRecording("FL1" \| "FR1", estado)` | `reqSetMacroRecordStatus` |
 | Baixo nível | `send`, `request`, `readProfile`, `writeProfile`, `writeProfileImage` | fila `Ls` |
 
+- `GamepadState`: `buttons`, sticks e gatilhos já mapeados pelo perfil; `physical` traz o botão físico; `imu` com `{ x, y, z }` ([05](05-report-de-estado.md)).
 - Escritas de perfil enviam só o trecho alterado, como o app.
 - `request` serializa comandos e reenvia a cada 200 ms (máx. 10).
 - Builders sem I/O: `import { protocol } from "gamesir-hid"`. Codecs avulsos: `decodeLightProfile`, `encodeGameProfile` etc.
@@ -75,7 +76,7 @@ button.onclick = async () => {
 | `npx tsx examples/monitor.ts` | estado ao vivo (imprime quando muda entrada, bateria ou LED) |
 | `npx tsx examples/imu.ts` | giroscópio e acelerômetro, 10 linhas/s |
 | `npx tsx examples/game-profile.ts rate` | troca a taxa de report do perfil ativo, confere lendo de volta e restaura |
-| `npx tsx examples/game-profile.ts remap` | A → B por 15 s no perfil ativo e restaura |
+| `npx tsx examples/game-profile.ts remap` | A → B por 15 s no perfil ativo (mostra mapeado × físico) e restaura |
 | `npx tsx examples/lights.ts static "#00aaff"` | cor fixa |
 | `npx tsx examples/lights.ts home "#ff0000"` | só o Home |
 | `npx tsx examples/lights.ts preset Rainbow` | preset |

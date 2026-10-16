@@ -1,6 +1,6 @@
 # 05 · Report de estado `0x12`
 
-64 bytes pela coleção `0xFFF0`, enquanto houver heartbeat. Fontes: `ie` (`main.app.js:825`), `Us.push` (`main.app.js:7986`), `parseGamepadState` (`main.app.js:8276`). Byte 0 = report ID, como no node-hid.
+64 bytes pela coleção `0xFFF0`, enquanto houver heartbeat; ~200 por segundo pelo dongle, independente da taxa de report do perfil (250 e 1000 Hz testados). Fontes: `ie` (`main.app.js:825`), `Us.push` (`main.app.js:7986`), `parseGamepadState` (`main.app.js:8276`). Byte 0 = report ID, como no node-hid.
 
 | Byte | Bits | Campo | Nome no app |
 |---|---|---|---|
@@ -15,7 +15,7 @@
 | 7 | 0 / 1 | Home / Capture | PS / Camera |
 | 8, 9 | | LT, RT analógicos 0–255 | |
 | 10 | | não mapeado (`0x20` nas capturas) | |
-| 11 | | contador da IMU, 8 bits; ~780/s (≈ 3 por report), dá a volta em 255 | |
+| 11 | | contador da IMU, 8 bits; ~780/s (3–4 por report), dá a volta em 255 | |
 | 12 | | não mapeado (sempre `0`) | |
 | 13–18 | | **giroscópio** X, Y, Z: int16 LE ([IMU](#imu)) | |
 | 19–24 | | **acelerômetro** X, Y, Z: int16 LE ([IMU](#imu)) | |
@@ -30,13 +30,14 @@
 | 50–52 | | cor UpperRight | |
 | 53 | 0, 1 | gravando macro | |
 | 53 | 4 / 5 | macro em L4 / R4 | FL1 / FR1 |
-| 54–62 | | **cópia crua das entradas**, mesmo layout dos bytes 1–9 (54–57 analógicos, 58 hat/face, 59 ombros, 60 sistema, 61–62 gatilhos). Os analógicos aparecem fora do centro (`7d 7a 86 80`): provável leitura antes da deadzone | |
+| 54–62 | | **entradas físicas, antes do mapeamento do perfil**; mesmo layout dos bytes 1–9 (54–57 analógicos, 58 hat/face, 59 ombros, 60 sistema, 61–62 gatilhos). Os analógicos aparecem fora do centro (`7d 7a 86 80`): provável leitura antes da deadzone | |
 | 60 | 3 / 4 / 5 | L4 / R4 / M | o app lê daqui, não do byte 7 |
 
+- Bytes 1–9 já saem com o mapeamento do perfil ativo; 54–62 trazem o botão físico. Teste com A → B: apertar A dá B nos bytes 1–9 e A no byte 58. Lib: `s.buttons` (mapeado) e `s.physical.buttons`.
 - Ordem das cores: array `au` (`main.app.js:8052`). **Difere da ordem do frame** no perfil de luz ([06](06-perfil-de-luz.md)).
 - As cores são as renderizadas no momento (animação + brilho).
 - Bytes não mapeados: investigar com `pad.onRaw()` movendo o controle.
-- Confirmado no hardware: bateria (36), cor do Home (38–40), analógico esquerdo, ABXY, hat solto = `0xF`, animação ativa (37), IMU.
+- Confirmado no hardware: bateria (36), cor do Home (38–40), analógico esquerdo, ABXY, hat solto = `0xF`, animação ativa (37), IMU, entradas mapeadas × físicas.
 
 ```ts
 await pad.start();

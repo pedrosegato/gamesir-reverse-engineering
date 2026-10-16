@@ -54,7 +54,7 @@ Na tabela `ks`, sem uso pelo C2: `01`/`02` Enter/ExitProfileConfig, `08` WritePr
 
 - Blocos de 58 B (64 − 6 de cabeçalho). Luz = 11 pacotes (10 × 58 + 55).
 - Leitura completa quando `offset + len` = tamanho do perfil.
-- O app escreve só o intervalo entre o primeiro e o último byte alterados. Não existe "salvar": cada `03` vale na hora.
+- O app escreve só o intervalo entre o primeiro e o último byte alterados. Não existe "salvar": cada `03` vale na hora ✅ (remapeamento muda a saída sem reconectar).
 
 ## `0D`: LED
 

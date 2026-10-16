@@ -5,7 +5,6 @@ const REMAP_SECONDS = 15;
 const HZ: Record<number, number> = { [ReportRate.Hz250]: 250, [ReportRate.Hz500]: 500, [ReportRate.Hz1000]: 1000 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const bit = (byte: number, n: number) => (byte >> n) & 1;
 
 const [command] = process.argv.slice(2);
 const pad = await openFirstCyclone2();
@@ -50,12 +49,12 @@ async function testReportRate(): Promise<void> {
 async function testRemap(): Promise<void> {
   pendingRestore = await pad.readGameProfile(profile);
   await pad.remapButton(profile, "A", KeyCode.B);
-  console.log(`A → B por ${REMAP_SECONDS} s. Aperte A, depois B, e veja num testador de gamepad também.`);
+  console.log(`A → B por ${REMAP_SECONDS} s (só o A muda; B continua B). Aperte A, depois B.`);
 
   let last = "";
   const off = pad.onState((s) => {
-    const raw = s.raw[58];
-    const line = `report (bytes 1–9): A=${+s.buttons.A} B=${+s.buttons.B} | cópia (byte 58): A=${bit(raw, 5)} B=${bit(raw, 6)}`;
+    const { A, B } = s.buttons;
+    const line = `mapeado: A=${+A} B=${+B} | físico: A=${+s.physical.buttons.A} B=${+s.physical.buttons.B}`;
     if (line === last) return;
     last = line;
     console.log(line);

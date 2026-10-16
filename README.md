@@ -66,7 +66,7 @@ Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
 | | |
 |---|---|
 | Heartbeat liga o report `0x12` | ✅ |
-| Report `0x12`: bateria, analógico esquerdo, ABXY, cor do Home | ✅ |
+| Report `0x12`: bateria, analógico esquerdo, ABXY, cor do Home; entradas mapeadas (1–9) × físicas (54–62) | ✅ |
 | Respostas chegam com report ID `0x10` | ✅ |
 | Versão de firmware, perfil ativo, leitura de todos os perfis | ✅ |
 | Layout do perfil de jogo e de luz vs dump real (ida e volta idêntica) | ✅ |
@@ -74,8 +74,8 @@ Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
 | Escrita do perfil de luz: cor fixa, só Home, preset, troca de animação | ✅ |
 | Luz 4 = LED do centro | ✅ |
 | IMU: contador (11), giroscópio (13–18), acelerômetro (19–24), eixos e sinais | ✅ |
-| Escrita do perfil de jogo (taxa de report, remapeamento: `examples/game-profile.ts`; macro) | pendente |
-| Gravação de macro pelo controle (`0F 16`) | pendente |
+| Escrita do perfil de jogo: taxa de report, remapeamento (vale na hora) | ✅ |
+| Macro em L4/R4 (perfil e gravação pelo controle, `0F 16`) | pendente |
 | Cabo, Bluetooth | pendente |
 
 ---
