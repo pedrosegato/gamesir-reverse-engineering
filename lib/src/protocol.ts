@@ -7,6 +7,7 @@ import {
   OUTPUT_REPORT_ID,
   PACKET_SIZE,
   Profile,
+  STATE_REPORT_ID,
 } from "./constants.js";
 
 const VIBRATE_MAGIC = [0x66, 0x55];
@@ -87,6 +88,7 @@ export const quickUpdate = () => packet(Cmd.QuickUpdate, ...QUICK_UPDATE_MAGIC);
 export const enterUpgradeMode = () => packet(Cmd.RequestUpgrade);
 
 export interface Response {
+  reportId: number;
   cmd: number;
   name: string;
   raw: Uint8Array;
@@ -104,10 +106,11 @@ export interface ProfileChange {
   length: number;
 }
 
+/** Como o app, não confere o report ID da resposta: só descarta o report de estado. */
 export function parseResponse(data: ArrayLike<number>): Response | null {
-  if (data.length < 2 || data[0] !== OUTPUT_REPORT_ID) return null;
+  if (data.length < 2 || data[0] === STATE_REPORT_ID) return null;
   const raw = Uint8Array.from(data);
-  return { cmd: raw[1], name: cmdName(raw[1]), raw };
+  return { reportId: raw[0], cmd: raw[1], name: cmdName(raw[1]), raw };
 }
 
 export const isBusyAck = (raw: ArrayLike<number>) => raw[1] === Cmd.Ack && raw[2] === 1;

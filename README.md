@@ -63,7 +63,9 @@ tools/             prepare-analysis.sh → analysis/ (fora do git)
 
 | | |
 |---|---|
-| Lib no controle real | pendente |
+| Report `0x12`: bateria, analógico esquerdo, ABXY, cor do Home | ✅ dongle `0x100B`, Windows |
+| Heartbeat liga o report `0x12` | ✅ |
+| Respostas a comandos (`0F 09`, `0F 04`) | ❌ não chegam na lib — investigando com `examples/sniff.ts` |
 | Perfil de jogo vs dump real | pendente |
 | Posição física da luz 4 | pendente |
 | Resposta a WriteProfile/SwitchProfile | pendente |

@@ -48,5 +48,7 @@ describe("pacotes", () => {
     expect(chunk.offset).toBe(258);
     expect(Array.from(chunk.data)).toEqual([9, 8, 7]);
     expect(P.parseProfileChange([15, 15, 32, 0, 1, 0, 124])).toEqual({ profileNum: 32, offset: 1, length: 124 });
+    expect(P.parseResponse([0x10, Cmd.ReadFwVersionAck])?.cmd).toBe(Cmd.ReadFwVersionAck);
+    expect(P.parseResponse([0x12, Cmd.Ack])).toBeNull();
   });
 });
