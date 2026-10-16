@@ -78,6 +78,7 @@ Tabela completa em `lib/src/keycodes.ts` (gerada do `ko`).
 - O app grava macro com mapeamento desligado (`+2` = 0, teclas 0) e bit 0 ligado quando há passos.
 - **`delay` = do início do passo ao início do próximo**; o hold fica dentro dele. Medido com A, B, X, Y a 200/300 ms: hold 194–206 ms, início → início 294–306 ms, solto → próximo 100 ms. `delay` < hold sobrepõe os passos.
 - Modo "Press" (medido): um toque inicia a macro, que roda inteira mesmo segurando o botão; outro toque durante a execução interrompe. "Hold" e loop: não testados.
+- UI: "Trigger Method" = "Single Press" (bit 1 desligado) ou "Long Press" (ligado); "Loop" é uma chave à parte. O intervalo do loop (`cycleTime`, +8..+9) aparece no campo de delay do último passo (`renderer.js:13521`).
 
 ## Gatilhos LT / RT (28 B)
 

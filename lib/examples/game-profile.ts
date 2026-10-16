@@ -13,6 +13,7 @@ import { openFirstCyclone2 } from "./_open.js";
 
 const WATCH_SECONDS = 15;
 const RECORD_SECONDS = 10;
+const LOOP_MS = 1000;
 const HZ: Record<number, number> = { [ReportRate.Hz250]: 250, [ReportRate.Hz500]: 500, [ReportRate.Hz1000]: 1000 };
 
 const TEST_MACRO: MacroStep[] = [
@@ -20,6 +21,24 @@ const TEST_MACRO: MacroStep[] = [
   { key: KeyCode.B, holdMs: 200, delayMs: 300 },
   { key: KeyCode.X, holdMs: 200, delayMs: 300 },
   { key: KeyCode.Y, holdMs: 200, delayMs: 0 },
+];
+
+const MODE_TESTS = [
+  {
+    name: "Long Press, sem loop",
+    options: { holdToTrigger: true, loop: false, loopMs: 0 },
+    instructions: "segure o L4 até a sequência acabar e solte. Depois segure de novo e solte logo depois do A.",
+  },
+  {
+    name: `Single Press + loop de ${LOOP_MS} ms`,
+    options: { holdToTrigger: false, loop: true, loopMs: LOOP_MS },
+    instructions: "toque o L4 uma vez (sem segurar) e espere umas 2 voltas. Depois toque de novo.",
+  },
+  {
+    name: `Long Press + loop de ${LOOP_MS} ms`,
+    options: { holdToTrigger: true, loop: true, loopMs: LOOP_MS },
+    instructions: "segure o L4 por umas 2 voltas e solte.",
+  },
 ];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -58,7 +77,10 @@ const keyList = (keys: number[]) =>
     .join(" + ");
 
 function describeBackButton({ macro, mapEnabled, mapTo }: BackButton): string {
-  if (macro.enabled) return `macro: ${describeMacro(macro.steps)}`;
+  if (macro.enabled) {
+    const mode = [macro.holdToTrigger ? "Long Press" : "Single Press", macro.loop ? `loop ${macro.loopMs} ms` : ""];
+    return `macro (${mode.filter(Boolean).join(", ")}): ${describeMacro(macro.steps)}`;
+  }
   if (mapEnabled) return `mapeado para ${keyList(mapTo)}`;
   return "sem mapeamento";
 }
@@ -121,6 +143,18 @@ async function testMacro(): Promise<void> {
   await restore();
 }
 
+async function testMacroModes(): Promise<void> {
+  pendingRestore = await pad.readGameProfile(profile);
+  for (const [i, test] of MODE_TESTS.entries()) {
+    await pad.setMacro(profile, "L4", TEST_MACRO, test.options);
+    console.log(`\n[${i + 1}/${MODE_TESTS.length}] ${test.name}`);
+    console.log(`L4 gravado: ${describeBackButton((await pad.readGameProfile(profile)).L4)}`);
+    console.log(`por ${WATCH_SECONDS} s: ${test.instructions}`);
+    await watch(WATCH_SECONDS);
+  }
+  await restore();
+}
+
 async function testRecord(): Promise<void> {
   pendingRestore = await pad.readGameProfile(profile);
   const offChange = pad.onProfileChanged((c) =>
@@ -152,6 +186,7 @@ const tests: Record<string, () => Promise<void>> = {
   rate: testReportRate,
   remap: testRemap,
   macro: testMacro,
+  modes: testMacroModes,
   record: testRecord,
 };
 
