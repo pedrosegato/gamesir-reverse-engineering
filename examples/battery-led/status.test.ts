@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { type BatteryStatus, classify, HYSTERESIS, indicatorKey } from "./status.js";
 
-const onBattery = (percent: number, previous?: BatteryStatus) => classify({ percent, charging: false }, previous);
+const onBattery = (percent: number, previous?: BatteryStatus) => classify({ percent, powered: false }, previous);
 
 describe("classify", () => {
   it("no cabo: carregando até 100 %, depois carregada", () => {
-    expect(classify({ percent: 57, charging: true })).toEqual({ kind: "charging", percent: 57 });
-    expect(classify({ percent: 100, charging: true })).toEqual({ kind: "charged" });
+    expect(classify({ percent: 57, powered: true })).toEqual({ kind: "charging", percent: 57 });
+    expect(classify({ percent: 100, powered: true })).toEqual({ kind: "charged" });
   });
 
   it.each([

@@ -13,7 +13,7 @@ export const HYSTERESIS = 2;
 
 export interface BatterySample {
   readonly percent: number;
-  readonly charging: boolean;
+  readonly powered: boolean;
 }
 
 export type BatteryStatus =
@@ -39,8 +39,8 @@ function levelFor(percent: number, previous?: Level): Level {
   return stillInside ? previous : candidate;
 }
 
-export function classify({ percent, charging }: BatterySample, previous?: BatteryStatus): BatteryStatus {
-  if (charging) return percent >= 100 ? { kind: "charged" } : { kind: "charging", percent };
+export function classify({ percent, powered }: BatterySample, previous?: BatteryStatus): BatteryStatus {
+  if (powered) return percent >= 100 ? { kind: "charged" } : { kind: "charging", percent };
   const previousLevel = previous?.kind === "discharging" ? previous.level : undefined;
   return { kind: "discharging", percent, level: levelFor(percent, previousLevel) };
 }

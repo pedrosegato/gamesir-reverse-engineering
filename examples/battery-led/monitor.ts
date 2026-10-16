@@ -158,7 +158,7 @@ export class BatteryMonitor {
   }
 
   private async sample(session: Session): Promise<void> {
-    const sample = await this.readBattery(session.pad);
+    const sample = await this.readBattery(session.pad, session.connection);
     if (!sample) {
       this.report({ kind: "no-signal", connection: session.connection });
       return;
@@ -168,11 +168,12 @@ export class BatteryMonitor {
     await this.apply(session);
   }
 
-  private async readBattery(pad: Cyclone2): Promise<BatterySample | null> {
+  /** Com a carga completa o controle deixa de reportar "carregando", mas no cabo ele continua na energia. */
+  private async readBattery(pad: Cyclone2, connection: Connection): Promise<BatterySample | null> {
     const next = pad.nextState(this.timing.sampleTimeoutMs).catch(() => null);
     await pad.send(protocol.heartbeat());
     const state = await next;
-    return state && { percent: state.batteryLevel, charging: state.chargeState === 1 };
+    return state && { percent: state.batteryLevel, powered: state.chargeState !== 0 || connection === "cabo" };
   }
 
   private target(session: Session): LightShown | undefined {

@@ -12,7 +12,7 @@ import {
 } from "gamesir-hid";
 import { describe, expect, it } from "vitest";
 import { indicatorsFor } from "./indicators.js";
-import { BatteryMonitor, type FoundPad, type MonitorUpdate } from "./monitor.js";
+import { BatteryMonitor, type Connection, type FoundPad, type MonitorUpdate } from "./monitor.js";
 
 const SLOT = 3;
 const ANIMATION_SIZE = 124;
@@ -89,7 +89,7 @@ function slotWith(pad: FakePad, animation: Animation): Uint8Array {
   return encodeLightProfile(profile).slice(LightOffset.animation(SLOT), LightOffset.animation(SLOT) + ANIMATION_SIZE);
 }
 
-function start(pads: FakePad[]) {
+function start(pads: FakePad[], connection: Connection = "dongle") {
   const updates: MonitorUpdate[] = [];
   const waiters: { match: (u: MonitorUpdate) => boolean; resolve: () => void }[] = [];
   const queue = [...pads];
@@ -99,7 +99,7 @@ function start(pads: FakePad[]) {
     timing: { sampleEveryMs: 5, sampleTimeoutMs: 30, searchEveryMs: 5 },
     find: async (): Promise<FoundPad | null> => {
       const transport = queue.shift();
-      return transport ? { transport, connection: "dongle" } : null;
+      return transport ? { transport, connection } : null;
     },
     onUpdate: (update) => {
       updates.push(update);
@@ -150,6 +150,15 @@ describe("BatteryMonitor", () => {
     pad.charging = true;
     await run.until(lightIs("charging"));
     expect(pad.slot()).toEqual(slotWith(pad, indicators.charging.animation));
+    await run.finish();
+  });
+
+  it("no cabo com 100 % fica carregada mesmo quando o controle para de reportar carga", async () => {
+    const pad = new FakePad();
+    pad.percent = 100;
+    const run = start([pad], "cabo");
+    await run.until(lightIs("charged"));
+    expect(pad.slot()).toEqual(slotWith(pad, indicators.charged.animation));
     await run.finish();
   });
 
