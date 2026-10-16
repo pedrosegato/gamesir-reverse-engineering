@@ -5,34 +5,33 @@ import { indicatorsFor } from "./indicators.js";
 import type { IndicatorKey } from "./status.js";
 
 /**
- * The controller plays at most 8 equally long frames, too few for quick blinks followed by a long pause, so the
- * app steps through the frames with `showFrame` and holds the last, all-off frame for `pauseMs`.
+ * The controller plays its frames in a loop, all equally long, so blinks followed by a long pause are stepped by
+ * the app with `showFrame`: each frame index in `frames` for `stepMs`, the last one held for `holdMs`.
  */
-interface Burst {
+interface Steps {
+  readonly frames: readonly number[];
   readonly stepMs: number;
-  readonly pauseMs: number;
+  readonly holdMs: number;
 }
 
 interface Proposal {
   readonly animation: Animation;
-  readonly burst?: Burst;
+  readonly steps?: Steps;
 }
 
 const SLOT = 3;
 
 const solid = (color: string): Proposal => ({ animation: animation([{ Home: color }]) });
 
-/** Home blinks while the sides go left, right, off, right, left. */
+/** Turn-signal style: "click" lights Home and the left side, "clack" the right side; then Home stays lit. */
 function alert(color: string): Proposal {
-  const frames: FrameInput[] = [
-    { Home: color, LowerLeft: color },
-    { LowerRight: color },
-    { Home: color },
-    { LowerRight: color },
-    { Home: color, LowerLeft: color },
-    {},
-  ];
-  return { animation: animation(frames), burst: { stepMs: 250, pauseMs: 12_000 } };
+  const click: FrameInput = { Home: color, LowerLeft: color };
+  const clack: FrameInput = { LowerRight: color };
+  const rest: FrameInput = { Home: color };
+  return {
+    animation: animation([click, clack, rest]),
+    steps: { frames: [0, 1, 0, 1, 0, 1, 2], stepMs: 500, holdMs: 12_000 },
+  };
 }
 
 export const PROPOSALS: Readonly<Record<IndicatorKey, Proposal>> = {
@@ -52,11 +51,12 @@ const pause = (ms: number, signal: AbortSignal) => sleep(ms, undefined, { signal
 const aborted = (signal: AbortSignal) =>
   new Promise<void>((resolve) => signal.addEventListener("abort", () => resolve(), { once: true }));
 
-async function playBursts(pad: Cyclone2, frameCount: number, { stepMs, pauseMs }: Burst, signal: AbortSignal) {
+async function playSteps(pad: Cyclone2, { frames, stepMs, holdMs }: Steps, signal: AbortSignal) {
   while (!signal.aborted) {
-    for (let frame = 0; frame < frameCount && !signal.aborted; frame++) {
+    for (const [i, frame] of frames.entries()) {
+      if (signal.aborted) return;
       await pad.showFrame(frame);
-      await pause(frame === frameCount - 1 ? pauseMs : stepMs, signal);
+      await pause(i === frames.length - 1 ? holdMs : stepMs, signal);
     }
   }
 }
@@ -71,7 +71,7 @@ export async function runPreview(key: IndicatorKey, signal: AbortSignal): Promis
   const proposal = PROPOSALS[key];
   try {
     await pad.setAnimation(proposal.animation, { slot: SLOT });
-    if (proposal.burst) await playBursts(pad, proposal.animation.keyFrameCount, proposal.burst, signal);
+    if (proposal.steps) await playSteps(pad, proposal.steps, signal);
     else await aborted(signal);
   } finally {
     await pad.playLights();
