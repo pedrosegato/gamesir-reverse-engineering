@@ -48,13 +48,13 @@ export interface KeyMapping {
 export interface MacroStep {
   key: number;
   holdMs: number;
-  /** O último passo (30º) não tem delay no perfil. */
+  /** Do início deste passo ao início do próximo (o hold fica dentro). O 30º passo não tem delay no perfil. */
   delayMs: number;
 }
 
 export interface Macro {
   enabled: boolean;
-  /** "Long Press" no app: a macro roda enquanto o botão estiver pressionado. */
+  /** "Hold" no app; desligado = "Press": um toque inicia, outro toque durante a execução interrompe. */
   holdToTrigger: boolean;
   loop: boolean;
   loopMs: number;

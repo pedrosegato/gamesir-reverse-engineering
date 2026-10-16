@@ -69,11 +69,15 @@ Tabela completa em `lib/src/keycodes.ts` (gerada do `ko`).
 | Offset | Campo |
 |---|---|
 | +0..+6 | igual a botão |
-| +7 | bit 0 macro ligada · bit 1 "segurar para executar" · bit 2 loop |
+| +7 | bit 0 macro ligada · bit 1 modo "Hold" (desligado = "Press") · bit 2 loop |
 | +8..+9 | intervalo do loop, ms |
 | +10 | nº de passos, 0–30 |
 | +11..+155 | passos 1–29: `tecla, hold ms (2 B), delay ms (2 B)` |
 | +156..+158 | passo 30: `tecla, hold ms` — **sem delay** |
+
+- O app grava macro com mapeamento desligado (`+2` = 0, teclas 0) e bit 0 ligado quando há passos.
+- **`delay` = do início do passo ao início do próximo**; o hold fica dentro dele. Medido com A, B, X, Y a 200/300 ms: hold 194–206 ms, início → início 294–306 ms, solto → próximo 100 ms. `delay` < hold sobrepõe os passos.
+- Modo "Press" (medido): um toque inicia a macro, que roda inteira mesmo segurando o botão; outro toque durante a execução interrompe. "Hold" e loop: não testados.
 
 ## Gatilhos LT / RT (28 B)
 
@@ -139,12 +143,12 @@ Saída: 1 analógico esquerdo, 2 analógico direito, 3 teclas, 4 mouse.
 const p = await pad.readGameProfile(1);
 p.fun.reportRate = ReportRate.Hz1000;
 p.buttons.A = { ...p.buttons.A, mapEnabled: true, mapTo: [KeyCode.B, 0, 0] };
-p.L4.macro = { enabled: true, holdToTrigger: false, loop: false, loopMs: 0,
-               steps: [{ key: KeyCode.A, holdMs: 50, delayMs: 50 }, { key: KeyCode.B, holdMs: 50, delayMs: 0 }] };
 await pad.writeGameProfile(1, p);                  // envia só o trecho alterado
 
 await pad.remapButton(1, "X", KeyCode.Y);
 await pad.setReportRate(1, ReportRate.Hz500);
+// A por 50 ms; B começa 100 ms depois do A
+await pad.setMacro(1, "L4", [{ key: KeyCode.A, holdMs: 50, delayMs: 100 }, { key: KeyCode.B, holdMs: 50, delayMs: 0 }]);
 ```
 
-Validado contra um dump real (`lib/test/fixtures/dump-dongle-fw346.json`): os 5 perfis decodificam e recodificam idênticos, e os valores batem com os padrões do app (motores 75, deadzone de gatilho 5–95, gyro desativado = 255, saída do Tilt = analógico direito). Escrita validada (`examples/game-profile.ts`, perfil 1): taxa de report gravada e lida de volta; A → B vale na hora (bytes 1–9 do `0x12` passam a mostrar B); restauração devolve o perfil original. Macro ainda não testada.
+Validado contra um dump real (`lib/test/fixtures/dump-dongle-fw346.json`): os 5 perfis decodificam e recodificam idênticos, e os valores batem com os padrões do app (motores 75, deadzone de gatilho 5–95, gyro desativado = 255, saída do Tilt = analógico direito). Escrita validada (`examples/game-profile.ts`, perfil 1): taxa de report gravada e lida de volta; A → B vale na hora (bytes 1–9 do `0x12` passam a mostrar B); restauração devolve o perfil original. Macro em L4 gravada pela lib toca como esperado; gravação pelo controle em [04](04-protocolo-hid.md#gravação-de-macro-16).

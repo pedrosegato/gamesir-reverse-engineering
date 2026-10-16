@@ -75,7 +75,8 @@ Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
 | Luz 4 = LED do centro | ✅ |
 | IMU: contador (11), giroscópio (13–18), acelerômetro (19–24), eixos e sinais | ✅ |
 | Escrita do perfil de jogo: taxa de report, remapeamento (vale na hora) | ✅ |
-| Macro em L4/R4 (perfil e gravação pelo controle, `0F 16`) | pendente |
+| Macro em L4: gravada pela lib e gravada pelo controle (`0F 16`) | ✅ |
+| Macro: modo "Hold", loop, R4, comando de parar gravação | pendente |
 | Cabo, Bluetooth | pendente |
 
 ---

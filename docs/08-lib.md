@@ -55,6 +55,7 @@ button.onclick = async () => {
 | Perfis de jogo | `switchProfile(1..4 \| "Shift")` | `reqSwitchProfile` |
 | | `readGameProfile`, `writeGameProfile`, `updateGameProfile` | `saveProfile` |
 | | `remapButton(n, botão, ...teclas)`, `setReportRate(n, taxa)` | `setKeyProfile`, `reportRate` |
+| | `setMacro(n, "L4" \| "R4", passos, { holdToTrigger, loop, loopMs })` | editor de macro |
 | Luz | `readLightProfile`, `writeLightProfile`, `updateLightProfile` | `setProfileByProperty("Light")` |
 | | `setActiveAnimation`, `setAnimation(anim, { slot })`, `applyPreset(nome, slot?)` | slots, presets |
 | | `setStaticColor(cor \| { Home, LowerLeft, … })` | — |
@@ -78,7 +79,7 @@ button.onclick = async () => {
 | `npx tsx examples/game-profile.ts rate` | troca a taxa de report do perfil ativo, confere lendo de volta e restaura |
 | `npx tsx examples/game-profile.ts remap` | A → B por 15 s no perfil ativo (mostra mapeado × físico) e restaura |
 | `npx tsx examples/game-profile.ts macro` | grava a macro A, B, X, Y no L4 por 15 s e restaura |
-| `npx tsx examples/game-profile.ts record` | gravação de macro pelo controle no L4 (`0F 16`), toca e restaura |
+| `npx tsx examples/game-profile.ts record` | gravação de macro pelo controle no L4 (`0F 16`), mostra o resultado, toca e restaura |
 | `npx tsx examples/lights.ts static "#00aaff"` | cor fixa |
 | `npx tsx examples/lights.ts home "#ff0000"` | só o Home |
 | `npx tsx examples/lights.ts preset Rainbow` | preset |

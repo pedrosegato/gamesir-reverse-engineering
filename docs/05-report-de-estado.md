@@ -28,8 +28,8 @@
 | 44–46 | | cor LowerRight | |
 | 47–49 | | cor UpperLeft | |
 | 50–52 | | cor UpperRight | |
-| 53 | 0, 1 | gravando macro | |
-| 53 | 4 / 5 | macro em L4 / R4 | FL1 / FR1 |
+| 53 | 0, 1 | gravando macro ✅ | |
+| 53 | 4 / 5 | gravando em L4 / R4 (L4 ✅) | FL1 / FR1 |
 | 54–62 | | **entradas físicas, antes do mapeamento do perfil**; mesmo layout dos bytes 1–9 (54–57 analógicos, 58 hat/face, 59 ombros, 60 sistema, 61–62 gatilhos). Os analógicos aparecem fora do centro (`7d 7a 86 80`): provável leitura antes da deadzone | |
 | 60 | 3 / 4 / 5 | L4 / R4 / M | o app lê daqui, não do byte 7 |
 

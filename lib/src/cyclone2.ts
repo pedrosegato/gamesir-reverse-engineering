@@ -1,6 +1,13 @@
 import type { ColorInput } from "./color.js";
 import { Cmd, Profile, STATE_REPORT_ID } from "./constants.js";
-import { decodeGameProfile, encodeGameProfile, type GameProfile, type MappedButton } from "./game-profile.js";
+import {
+  decodeGameProfile,
+  encodeGameProfile,
+  type GameProfile,
+  type Macro,
+  type MacroStep,
+  type MappedButton,
+} from "./game-profile.js";
 import {
   type Animation,
   animation,
@@ -224,6 +231,24 @@ export class Cyclone2 {
     await this.updateGameProfile(profileNum, (p) => {
       const mapTo = [keys[0] ?? 0, keys[1] ?? 0, keys[2] ?? 0] as [number, number, number];
       p.buttons[button] = { ...p.buttons[button], mapEnabled: keys.length > 0, mapTo };
+      return p;
+    });
+  }
+
+  /** Como o app: desliga o mapeamento simples do botão; sem passos, a macro fica desligada. */
+  async setMacro(
+    profileNum: GameProfileNumber,
+    button: "L4" | "R4",
+    steps: MacroStep[],
+    { holdToTrigger = false, loop = false, loopMs = 0 }: Partial<Omit<Macro, "enabled" | "steps">> = {},
+  ): Promise<void> {
+    await this.updateGameProfile(profileNum, (p) => {
+      p[button] = {
+        ...p[button],
+        mapEnabled: false,
+        mapTo: [0, 0, 0],
+        macro: { enabled: steps.length > 0, holdToTrigger, loop, loopMs, steps },
+      };
       return p;
     });
   }

@@ -112,6 +112,25 @@ describe("Cyclone2", () => {
     expect(Array.from(fake.profiles.get(Profile.P1)?.slice(176, 186) ?? [])).toEqual(new Array(10).fill(0));
   });
 
+  it("macro no L4 desliga o mapeamento simples, como o app", async () => {
+    const fake = new FakeController();
+    const pad = new Cyclone2(fake);
+    await pad.remapButton(1, "A", 10);
+    await pad.updateGameProfile(1, (p) => {
+      p.L4 = { ...p.L4, mapEnabled: true, mapTo: [9, 0, 0] };
+      return p;
+    });
+    const steps = [{ key: 9, holdMs: 200, delayMs: 300 }];
+    await pad.setMacro(1, "L4", steps);
+    const { L4 } = await pad.readGameProfile(1);
+    expect(L4.mapEnabled).toBe(false);
+    expect(L4.mapTo).toEqual([0, 0, 0]);
+    expect(L4.macro).toEqual({ enabled: true, holdToTrigger: false, loop: false, loopMs: 0, steps });
+
+    await pad.setMacro(1, "L4", []);
+    expect((await pad.readGameProfile(1)).L4.macro.enabled).toBe(false);
+  });
+
   it("remapeia um botão no perfil de jogo", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);

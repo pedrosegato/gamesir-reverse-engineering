@@ -1,4 +1,5 @@
 import {
+  type BackButton,
   type Buttons,
   type GameProfile,
   type GameProfileNumber,
@@ -49,6 +50,18 @@ const pressed = (b: Buttons) =>
 
 const describeMacro = (steps: MacroStep[]) =>
   steps.map((s) => `${keyName(s.key) ?? s.key} ${s.holdMs}/${s.delayMs} ms`).join(", ") || "(vazia)";
+
+const keyList = (keys: number[]) =>
+  keys
+    .filter(Boolean)
+    .map((k) => keyName(k) ?? k)
+    .join(" + ");
+
+function describeBackButton({ macro, mapEnabled, mapTo }: BackButton): string {
+  if (macro.enabled) return `macro: ${describeMacro(macro.steps)}`;
+  if (mapEnabled) return `mapeado para ${keyList(mapTo)}`;
+  return "sem mapeamento";
+}
 
 /** Imprime físico × saída a cada mudança, com o tempo desde o início. */
 async function watch(seconds: number): Promise<void> {
@@ -101,17 +114,8 @@ async function testRemap(): Promise<void> {
 
 async function testMacro(): Promise<void> {
   pendingRestore = await pad.readGameProfile(profile);
-  await pad.updateGameProfile(profile, (p) => {
-    p.L4 = {
-      ...p.L4,
-      mapEnabled: false,
-      mapTo: [0, 0, 0],
-      macro: { enabled: true, holdToTrigger: false, loop: false, loopMs: 0, steps: TEST_MACRO },
-    };
-    return p;
-  });
-  const saved = (await pad.readGameProfile(profile)).L4.macro;
-  console.log(`L4 gravado: ${describeMacro(saved.steps)}`);
+  await pad.setMacro(profile, "L4", TEST_MACRO);
+  console.log(`L4 gravado: ${describeBackButton((await pad.readGameProfile(profile)).L4)}`);
   console.log(`por ${WATCH_SECONDS} s: aperte e solte o L4 uma vez, espere a sequência, repita.`);
   await watch(WATCH_SECONDS);
   await restore();
@@ -132,8 +136,7 @@ async function testRecord(): Promise<void> {
   await sleep(1000);
   offChange();
 
-  const { macro } = (await pad.readGameProfile(profile)).L4;
-  console.log(`macro gravada (enabled=${macro.enabled}): ${describeMacro(macro.steps)}`);
+  console.log(`L4 depois da gravação: ${describeBackButton((await pad.readGameProfile(profile)).L4)}`);
   console.log(`por ${WATCH_SECONDS} s: aperte e solte o L4 pra tocar a macro gravada.`);
   await watch(WATCH_SECONDS);
   await restore();
