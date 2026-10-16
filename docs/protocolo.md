@@ -38,7 +38,7 @@ Sessão:
 
 - Heartbeat `0F F2 00` a cada 1 s. Sem ele, o controle para de enviar `0x12`. `0F F2 01` ativa o modo de teste de botões.
 - Um comando por vez. Sem resposta em 200 ms, reenviar; desistir após 10 envios.
-- `10 06 01` = ocupado: reenviar.
+- `10 06 00` confirma `03` e `07`; `10 06 01` = ocupado, reenviar.
 - `10 0E` e `10 0F` são notificações, não respostas.
 - `0D` (LED), `16` (gravação de macro) e `20` (vibração) não têm resposta.
 
@@ -48,14 +48,14 @@ Sessão:
 
 | Cmd | Envio | Resposta | Função |
 |---|---|---|---|
-| `03` | `0F 03 n oH oL len data…` | não verificado | grava `len` bytes no perfil `n` |
+| `03` | `0F 03 n oH oL len data…` | `10 06 00` | grava `len` bytes no perfil `n` |
 | `04` | `0F 04 n oH oL len` | `10 05 n oH oL len data…` | lê `len` bytes do perfil `n` |
-| `07` | `0F 07 n` | não verificado | ativa o perfil de jogo `n` (1–4; 5 = Shift) |
+| `07` | `0F 07 n` | `10 06 00` | ativa o perfil de jogo `n` (1–4; 5 = Shift) |
 | `09` | `0F 09` | `10 0A …` | versões de firmware |
 | `0B` | `0F 0B` | `10 0C n` | perfil de jogo ativo |
 | `0D` | `0F 0D p f` | — | luz: `p = 1` toca a animação; `p = 0` pausa no frame `f` (base 1) |
 | `10` | `0F 10 n oH oL len` | `10 11 n oH oL len data…` | igual ao `04` |
-| `16` | `0F 16 k s` | `10 0F` ao terminar | gravação de macro pelo controle: `k` 1 = L4, 2 = R4; `s` 0 cancela, 1 inicia, 2 para |
+| `16` | `0F 16 k s` | `10 0F` ao terminar | gravação de macro pelo controle: `k` 1 = L4, 2 = R4; `s` 0 cancela (não verificado), 1 inicia, 2 para e salva |
 | `20` | `0F 20 66 55 L R` | — | vibração, `L` e `R` de 0 a 255 |
 | `F2` | `0F F2 m` | — | heartbeat |
 | `17` | `0F 17 55 88` | — | entra em atualização de firmware |
@@ -64,7 +64,7 @@ Sessão:
 
 **Notificação `10 0F n oH oL lenH lenL`**: o controle alterou `len` bytes do perfil `n` a partir de `offset` (troca de animação pelo botão M, fim de gravação de macro). `n = 48` indica o perfil ativo.
 
-Definidos no app e nunca enviados: `0F 04 n 03 9D 07` (ler "device info", offset 925), `0F 03 n 03 9E 06 <6 ASCII>` (gravar "device id"), `0F 01` e `0F 02 s` (entrar e sair de configuração).
+Definidos no app e nunca enviados: `0F 04 n 03 9D 07` (ler "device info", offset 925; responde como leitura comum, 7 bytes zerados), `0F 03 n 03 9E 06 <6 ASCII>` (gravar "device id"), `0F 01` e `0F 02 s` (entrar e sair de configuração).
 
 ### Versão de firmware
 
@@ -234,7 +234,7 @@ Execução:
 
 O app grava macros com o mapeamento do botão desligado (`+2` = 0).
 
-**Gravação pelo controle (`0F 16`)**: o byte 53 do `0x12` indica a gravação em curso. Cada aperto vira um passo, com hold e delay medidos; direções de analógico também entram. A gravação para sozinha em 30 passos. Ao terminar, o controle grava o bloco do botão e notifica (`10 0F 01 00 B0 00 9F` para o L4 no perfil 1). Uma gravação de um passo só vira mapeamento simples.
+**Gravação pelo controle (`0F 16`)**: o byte 53 do `0x12` indica a gravação em curso. Cada aperto vira um passo, com hold e delay medidos; direções de analógico também entram. A gravação termina com `0F 16 k 02` (em cerca de 200 ms) ou sozinha ao chegar em 30 passos. Ao terminar, o controle grava o bloco do botão e notifica (`10 0F 01 00 B0 00 9F` para o L4 no perfil 1). Uma gravação de um passo só vira mapeamento simples.
 
 #### Gatilhos LT e RT (28 bytes cada)
 
