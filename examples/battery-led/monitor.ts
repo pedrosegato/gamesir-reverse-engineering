@@ -1,4 +1,3 @@
-import { setTimeout as sleep } from "node:timers/promises";
 import { type Animation, Cyclone2, Cyclone2Pid, type HidTransport, protocol } from "gamesir-hid";
 import { findControllers, NodeHidTransport } from "gamesir-hid/node";
 import type { Indicators } from "./indicators.js";
@@ -60,6 +59,8 @@ interface SavedLight {
   readonly animation: Animation;
 }
 
+type WakeSlot = "search" | "session";
+
 interface Session {
   readonly pad: Cyclone2;
   readonly connection: Connection;
@@ -74,13 +75,11 @@ async function findPad(): Promise<FoundPad | null> {
   return { transport: await NodeHidTransport.open(found.path), connection: CONNECTIONS[found.productId] ?? "cable" };
 }
 
-const wait = (ms: number, signal: AbortSignal) => sleep(ms, undefined, { signal }).catch(() => undefined);
-
 export class BatteryMonitor {
   private readonly find: () => Promise<FoundPad | null>;
   private readonly timing: MonitorTiming;
   private paused = false;
-  private wake = new AbortController();
+  private readonly wakers: Partial<Record<WakeSlot, () => void>> = {};
   private stopping = false;
   private session: Session | undefined;
   /** Only on the first connection: after a reconnect the slot already holds the indicator. */
@@ -106,7 +105,7 @@ export class BatteryMonitor {
 
   /** Cuts the wait between searches short, e.g. when a USB device is plugged in. */
   rescan(): void {
-    this.wake.abort();
+    this.wakers.search?.();
   }
 
   async setPaused(paused: boolean): Promise<void> {
@@ -129,31 +128,32 @@ export class BatteryMonitor {
       } catch (error) {
         this.report({ kind: "error", during: "open", message: (error as Error).message });
       }
-      await wait(this.timing.searchEveryMs, AbortSignal.any([signal, this.wake.signal]));
-      if (this.wake.signal.aborted) this.wake = new AbortController();
+      await this.sleep(this.timing.searchEveryMs, signal, "search");
     }
     return null;
   }
 
   private async watch({ transport, connection }: FoundPad, signal: AbortSignal): Promise<void> {
     const pad = new Cyclone2(transport);
-    const lost = new AbortController();
-    const offDisconnect = pad.onDisconnect(() => lost.abort());
-    const until = AbortSignal.any([signal, lost.signal]);
+    let lost = false;
+    const offDisconnect = pad.onDisconnect(() => {
+      lost = true;
+      this.wakers.session?.();
+    });
     const session: Session = { pad, connection, writes: Promise.resolve() };
     this.report({ kind: "connected", connection });
 
     try {
       this.saved ??= await this.readSlot(pad);
       this.session = session;
-      while (!until.aborted) {
+      while (!signal.aborted && !lost) {
         await this.sample(session);
-        await wait(this.sampleInterval(session), until);
+        if (!lost) await this.sleep(this.sampleInterval(session), signal, "session");
       }
     } catch (error) {
       if (pad.isConnected) {
         this.report({ kind: "error", during: "session", message: (error as Error).message });
-        await wait(this.timing.searchEveryMs, until);
+        await this.sleep(this.timing.searchEveryMs, signal, "session");
       }
     } finally {
       this.session = undefined;
@@ -165,7 +165,23 @@ export class BatteryMonitor {
     }
     offDisconnect();
     await pad.close();
-    if (lost.signal.aborted && !signal.aborted) this.report({ kind: "disconnected" });
+    if (lost && !signal.aborted) this.report({ kind: "disconnected" });
+  }
+
+  /** Ends early when `signal` fires or when the slot's waker is called (device change, disconnect). */
+  private sleep(ms: number, signal: AbortSignal, slot: WakeSlot): Promise<void> {
+    if (signal.aborted) return Promise.resolve();
+    return new Promise((resolve) => {
+      const done = () => {
+        clearTimeout(timer);
+        signal.removeEventListener("abort", done);
+        this.wakers[slot] = undefined;
+        resolve();
+      };
+      const timer = setTimeout(done, ms);
+      signal.addEventListener("abort", done, { once: true });
+      this.wakers[slot] = done;
+    });
   }
 
   private sampleInterval({ connection, status }: Session): number {

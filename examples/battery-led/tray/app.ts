@@ -45,10 +45,12 @@ export async function runTray(): Promise<void> {
   if (!instance) return;
 
   startLog();
-  process.on("uncaughtException", (error) => {
-    log(`falha: ${error.stack ?? error.message}`);
+  const fail = (error: unknown) => {
+    log(`falha: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
     process.exit(1);
-  });
+  };
+  process.on("uncaughtException", fail);
+  process.on("unhandledRejection", fail);
 
   let shown: Shown = { text: describeUpdate({ kind: "searching" }, indicators), color: IDLE };
   let quitting = false;
