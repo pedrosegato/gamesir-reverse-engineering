@@ -147,4 +147,4 @@ await pad.remapButton(1, "X", KeyCode.Y);
 await pad.setReportRate(1, ReportRate.Hz500);
 ```
 
-Não verificado contra um dump real (`lib/examples/dump-profiles.ts`).
+Validado contra um dump real (`lib/test/fixtures/dump-dongle-fw346.json`): os 5 perfis decodificam e recodificam idênticos, e os valores batem com os padrões do app (motores 75, deadzone de gatilho 5–95, gyro desativado = 255, saída do Tilt = analógico direito). Escrita ainda não testada.

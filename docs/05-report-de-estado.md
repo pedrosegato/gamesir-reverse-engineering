@@ -6,7 +6,7 @@
 |---|---|---|---|
 | 1, 2 | | LX, LY: 0–255, centro 128, Y cresce para baixo | |
 | 3, 4 | | RX, RY | |
-| 5 | 0–3 | hat: 0 ↑, 1 ↗, 2 →, 3 ↘, 4 ↓, 5 ↙, 6 ←, 7 ↖, 8+ solto | |
+| 5 | 0–3 | hat: 0 ↑, 1 ↗, 2 →, 3 ↘, 4 ↓, 5 ↙, 6 ←, 7 ↖, `0xF` solto | |
 | 5 | 4 / 5 / 6 / 7 | X / A / B / Y | SQU / CRO / CIR / TRI |
 | 6 | 0 / 1 | LB / RB | L1 / R1 |
 | 6 | 2 / 3 | LT / RT digitais | L2 / R2 |
@@ -14,7 +14,9 @@
 | 6 | 6 / 7 | LS / RS (clique) | L3 / R3 |
 | 7 | 0 / 1 | Home / Capture | PS / Camera |
 | 8, 9 | | LT, RT analógicos 0–255 | |
-| 10–34 | | não mapeado (provável IMU) | |
+| 10 | | não mapeado (variou entre capturas) | |
+| 11–22 | | **provável IMU**: 6 × int16 LE; parado na mesa: `89 7 1 / 4 543 8087` (8087 ≈ 1 g a ±4 g). Ordem gyro/accel não confirmada | |
+| 23–34 | | não mapeado | |
 | 35 | | carregando = 1 | `chargeState` |
 | 36 | | bateria % | `batteryLevel` |
 | 37 | | animação de luz ativa | `ConfigIndex` |
@@ -25,12 +27,13 @@
 | 50–52 | | cor UpperRight | |
 | 53 | 0, 1 | gravando macro | |
 | 53 | 4 / 5 | macro em L4 / R4 | FL1 / FR1 |
-| 54–59 | | não mapeado | |
+| 54–62 | | **cópia crua das entradas**, mesmo layout dos bytes 1–9 (54–57 analógicos, 58 hat/face, 59 ombros, 60 sistema, 61–62 gatilhos). Os analógicos aparecem fora do centro (`7d 7a 86 80`): provável leitura antes da deadzone | |
 | 60 | 3 / 4 / 5 | L4 / R4 / M | o app lê daqui, não do byte 7 |
 
 - Ordem das cores: array `au` (`main.app.js:8052`). **Difere da ordem do frame** no perfil de luz ([06](06-perfil-de-luz.md)).
 - As cores são as renderizadas no momento (animação + brilho).
 - Bytes não mapeados: investigar com `pad.onRaw()` movendo o controle.
+- Confirmado no hardware: bateria (36), cor do Home (38–40), analógico esquerdo, ABXY, hat solto = `0xF`.
 
 ```ts
 await pad.start();

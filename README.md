@@ -30,7 +30,7 @@ API completa: [docs/08-lib.md](docs/08-lib.md).
 |---|---|
 | Interface | VID `0x3537`, usage page `0xFFF0` |
 | PIDs | `0x101D`, `0x1053` (cabo) · `0x100B`, `0x102A` (dongle) |
-| Pacote | 64 bytes: `0F <cmd> <args>` |
+| Pacote | 64 bytes: `0F <cmd> <args>` → resposta `10 <cmd> …` |
 | Estado | report `0x12` enquanto houver heartbeat `0F F2 00` a cada 1 s |
 | Perfis | 1–4 e Shift: 680 B · luz (32): 635 B · lidos/escritos em blocos de 58 B |
 | Vibração | `0F 20 66 55 L R` |
@@ -61,8 +61,22 @@ tools/             prepare-analysis.sh → analysis/ (fora do git)
 
 ## Validação no hardware
 
+Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
+
 | | |
 |---|---|
+| Heartbeat liga o report `0x12` | ✅ |
+| Report `0x12`: bateria, analógico esquerdo, ABXY, cor do Home | ✅ |
+| Respostas chegam com report ID `0x10` | ✅ |
+| Versão de firmware, perfil ativo, leitura de todos os perfis | ✅ |
+| Layout do perfil de jogo e de luz vs dump real (ida e volta idêntica) | ✅ |
+| Vibração | ✅ |
+| Escrita de perfil (luz, jogo) | pendente |
+| IMU nos bytes 11–22 | pendente |
+| Posição física da luz 4 | pendente |
+| Cabo, Bluetooth | pendente |
+
+---|---|
 | Report `0x12`: bateria, analógico esquerdo, ABXY, cor do Home | ✅ dongle `0x100B`, Windows |
 | Heartbeat liga o report `0x12` | ✅ |
 | Respostas a comandos (`0F 09`, `0F 04`) | ❌ não chegam na lib — investigando com `examples/sniff.ts` |

@@ -11,6 +11,8 @@ export const CyclonePid = {
 export const CYCLONE2_PIDS: readonly number[] = Object.values(CyclonePid);
 
 export const OUTPUT_REPORT_ID = 0x0f;
+/** Respostas chegam com 0x10; o app não confere, só exclui o 0x12. */
+export const RESPONSE_REPORT_ID = 0x10;
 export const STATE_REPORT_ID = 0x12;
 
 export const PACKET_SIZE = 64;

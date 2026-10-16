@@ -7,10 +7,12 @@ Coleção HID usage page `0xFFF0` ([03](03-dispositivo.md)). Fontes: builder `ps
 64 bytes nos dois sentidos.
 
 ```
-[0]   report ID   0x0F comandos/respostas · 0x12 estado
+[0]   report ID   0x0F comandos · 0x10 respostas · 0x12 estado
 [1]   comando
 [2…]  argumentos, resto 00
 ```
+
+- Respostas chegam com report ID `0x10` (confirmado no hardware). O app não confere esse byte: trata como resposta tudo que não for `0x12`.
 
 - O app escreve arrays curtos (`hid.write([15, 13])`); o driver completa. A lib sempre monta 64 bytes.
 - WebHID: report ID separado (`sendReport(0x0F, bytes[1..])`, `inputreport.reportId`). O transporte da lib normaliza para o formato do node-hid.
@@ -22,22 +24,22 @@ Coleção HID usage page `0xFFF0` ([03](03-dispositivo.md)). Fontes: builder `ps
 | Cmd | Nome no app | Enviado | Resposta | Função |
 |---|---|---|---|---|
 | `03` | WriteProfile | `0F 03 n offH offL len data…` | ¹ | grava até 58 B no perfil `n` |
-| `04` | ReadProfile | `0F 04 n offH offL len` | `0F 05 n offH offL len data…` | lê até 58 B |
-| `06` | Ack | — | | confirmação; `0F 06 01` = ocupado (app reenvia) |
+| `04` | ReadProfile | `0F 04 n offH offL len` | `10 05 n offH offL len data…` | lê até 58 B ✅ |
+| `06` | Ack | — | | confirmação; `10 06 01` = ocupado (app reenvia) |
 | `07` | SwitchProfile | `0F 07 n` | ¹ | perfil ativo: 1–4, 5 = Shift |
-| `09` | ReadFirmwareVersion | `0F 09` | `0F 0A …` | versões controle/dongle ([03](03-dispositivo.md)) |
-| `0B` | ReadCurrentProfile | `0F 0B` | `0F 0C n` | perfil ativo |
+| `09` | ReadFirmwareVersion | `0F 09` | `10 0A …` | versões controle/dongle ([03](03-dispositivo.md)) ✅ |
+| `0B` | ReadCurrentProfile | `0F 0B` | `10 0C n` | perfil ativo ✅ |
 | `0D` | SetLightStatus / ReadRGB | `0F 0D p f` | — | LED: ver abaixo |
-| `0F` | ProfileChanged | — | `0F 0F n offH offL lenH lenL` | controle avisa que um trecho mudou |
-| `10` | RefreshProfile | `0F 10 n offH offL len` | `0F 11 n offH offL len data…` | igual ao `04`; usado após `0F 0F` |
+| `0F` | ProfileChanged | — | `10 0F n offH offL lenH lenL` | controle avisa que um trecho mudou |
+| `10` | RefreshProfile | `0F 10 n offH offL len` | `10 11 n offH offL len data…` | igual ao `04`; usado após `10 0F` |
 | `16` | SetMacroStatus | `0F 16 k s` | — | gravação de macro no controle; `k` 1 = L4, 2 = R4; `s` 0 cancela, 1 inicia, 2 para; andamento no byte 53 do `0x12` |
-| `20` | Vibration | `0F 20 66 55 L R` | — | motores, `L`/`R` 0–255; `66 55` fixo |
-| `F2` | HeartBeat | `0F F2 m` | — | mantém o `0x12` chegando; `m` 1 = modo teste |
+| `20` | Vibration | `0F 20 66 55 L R` | — | motores, `L`/`R` 0–255; `66 55` fixo ✅ |
+| `F2` | HeartBeat | `0F F2 m` | — | mantém o `0x12` chegando; `m` 1 = modo teste ✅ |
 | `17` | QuickUpdate | `0F 17 55 88` | — | ⚠️ entra em atualização de firmware |
 | `FC` | RequestToUpgrade | `0F FC` | — | ⚠️ entra em DFU |
 | `FD` | SetCalibrationState | `0F FD s` | — | UI nunca envia; resposta nunca reconhecida (código morto); efeito desconhecido |
 
-¹ O app aceita qualquer resposta `0F` que não seja notificação. Tipo exato (provável `06`) não verificado.
+¹ O app aceita qualquer resposta que não seja notificação. Tipo exato (provável `06`) não verificado.
 
 Na tabela `ks`, sem uso pelo C2: `01`/`02` Enter/ExitProfileConfig, `08` WriteProfileToEEPRom, `12`–`15` EEPROM, `F0`/`F1` Download, `F3`/`F4` ReadKeyStatus.
 
@@ -48,7 +50,7 @@ Na tabela `ks`, sem uso pelo C2: `01`/`02` Enter/ExitProfileConfig, `08` WritePr
 | 1–4 | 680 | jogo ([07](07-perfil-de-jogo.md)) |
 | 5 | 680 | Shift (camada secundária) |
 | 32 | 635 | luz ([06](06-perfil-de-luz.md)) |
-| 48 | — | só em `0F 0F`: perfil ativo mudou |
+| 48 | — | só em `10 0F`: perfil ativo mudou |
 
 - Blocos de 58 B (64 − 6 de cabeçalho). Luz = 11 pacotes (10 × 58 + 55).
 - Leitura completa quando `offset + len` = tamanho do perfil.
@@ -84,8 +86,8 @@ Cores acesas vêm sempre no `0x12` (bytes 38–52); o app atualiza o desenho do 
 → 0F F2 00                      heartbeat, a cada 1 s
 ← 12 …                          estado
 → 0F 04 20 00 00 3A             lê luz, bloco 0
-← 0F 05 20 00 00 3A <58 B>
+← 10 05 20 00 00 3A <58 B>
   … 11 blocos
 → 0F 03 20 00 05 0F <15 B>      grava frame 0 da animação 0 (offset 5)
-← 0F ?? …                       confirmação (não verificado)
+← 10 ?? …                       confirmação (não verificado)
 ```

@@ -7,6 +7,7 @@ import {
   LIGHT_PROFILE_SIZE,
   LightOffset,
   Profile,
+  RESPONSE_REPORT_ID,
 } from "../src/index.js";
 
 /** Controle simulado: guarda os perfis em memória e responde como o firmware deveria. */
@@ -28,7 +29,7 @@ class FakeController implements HidTransport {
     const [, cmd, num, hi, lo, len] = report;
     const offset = (hi << 8) | lo;
     const reply = new Uint8Array(64);
-    reply[0] = 0x0f;
+    reply[0] = RESPONSE_REPORT_ID;
     if (cmd === Cmd.ReadProfile) {
       reply.set([Cmd.ReadProfileAck, num, hi, lo, len], 1);
       reply.set(this.profiles.get(num)?.slice(offset, offset + len) ?? [], 6);

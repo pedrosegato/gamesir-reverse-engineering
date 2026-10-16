@@ -21,11 +21,19 @@ VID `0x3537`.
 
 ## Interface
 
-| | |
-|---|---|
-| Coleção usada | usage page `0xFFF0`; número de interface ignorado |
-| Tráfego | comandos/respostas `0x0F` + estado `0x12` |
-| Interface de gamepad | ignorada (`GamepadUsagePage: -1`) |
+Coleções do dongle `0x100B` no Windows (`examples/sniff.ts`):
+
+| Interface | Usage page / usage | O que é |
+|---|---|---|
+| 0 | `0x0001` / `0x0005` | gamepad (reports de 14 B) |
+| 1 | `0xFFF0` / `0x0040` | **configuração** — comandos `0x0F`, respostas `0x10`, estado `0x12` |
+| 1 | `0x0001` / `0x0006` | teclado (mapeamento para teclas) |
+| 1 | `0x0001` / `0x0002` | mouse (mapeamento para mouse) |
+| 1 | `0x000C` / `0x0001` | consumer (teclas de mídia) |
+
+- O app abre só a coleção `0xFFF0`; número de interface ignorado.
+- Interface de gamepad ignorada pelo app (`GamepadUsagePage: -1`).
+- O dongle se apresenta como "Xbox 360 Controller for Windows".
 
 Se o backend HID não reportar usage page, o app aceita qualquer interface com o PID. A lib filtra por `0xFFF0`.
 
@@ -44,15 +52,23 @@ Bluetooth:
 
 ## Versão de firmware
 
-`0F 09` → `0F 0A …` (`resolveFwVersion`, `main.app.js:7102`).
+`0F 09` → `10 0A …` (`resolveFwVersion`, `main.app.js:7102`).
+
+Resposta real (dongle `0x100B`):
+
+```
+10 0A 30 00 33 00 34 00 36 00 30 00 31 00 32 00 31 00
+      └──── "0346" UTF-16LE ───┘ └──── "0121" UTF-16LE ───┘
+```
 
 | Bytes | Conteúdo |
 |---|---|
-| 4–8 | controle, 5 B ASCII |
-| 12–16 | dongle, 5 B ASCII (vazio no cabo) |
-| 2–3, 9–11 | não interpretados |
+| 2–9 | controle, 4 caracteres UTF-16LE |
+| 10–17 | dongle, 4 caracteres UTF-16LE (vazio no cabo) |
 
-Cada caractere vira um componente: `"123"` → `1.2.3`. No cabo o app compara a versão do controle; sem fio, a do dongle.
+- O app lê os bytes 4–8 e 12–16, descarta os `00` e transforma cada caractere em um componente: `"346"` → `3.4.6`. O `0` inicial fica de fora.
+- No cabo o app compara a versão do controle; sem fio, a do dongle.
+- Controle testado: **3.4.6**, dongle **1.2.1**. Firmware 3.x é a linha do `GS_C2_ADC_DEVICE` (PID com cabo provavelmente `0x1053`).
 
 ## Dongle
 
