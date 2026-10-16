@@ -1,13 +1,7 @@
-/**
- * Transporte para Node.js usando node-hid (o mesmo módulo que o GameSir Connect usa).
- * Instale com `npm install node-hid`.
- */
-
 import HID from "node-hid";
 import { CONFIG_USAGE_PAGE, CYCLONE2_PIDS, VENDOR_ID } from "../constants.js";
 import type { DeviceInfo, HidTransport } from "./types.js";
 
-/** Lista as interfaces de configuração (usage page 0xFFF0) de Cyclone 2 conectados. */
 export async function findCyclone2(): Promise<DeviceInfo[]> {
   const all = await HID.devicesAsync();
   return all

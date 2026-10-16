@@ -1,3 +1,31 @@
+# Dependências e build
+node_modules/
+!decompiled/node_modules/
+dist/
+!decompiled/dist/
+*.tsbuildinfo
+coverage/
+
+# Saída gerada por tools/prepare-analysis.sh
 analysis/
-lib/node_modules/
-lib/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Logs, segredos e capturas locais
+*.log
+npm-debug.log*
+.env
+.env.*
+*.pcap
+*.pcapng
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

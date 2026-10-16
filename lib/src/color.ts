@@ -6,7 +6,6 @@ export interface Rgb {
 
 export type ColorInput = Rgb | string | readonly [number, number, number];
 
-/** Aceita "#ff8800", "ff8800", [255, 136, 0] ou { r, g, b }. */
 export function toRgb(c: ColorInput): Rgb {
   if (typeof c === "string") {
     const hex = c.replace(/^#/, "");
@@ -24,11 +23,10 @@ export function toHex({ r, g, b }: Rgb): string {
 
 export const BLACK: Rgb = { r: 0, g: 0, b: 0 };
 
-/** HSV (h 0..360, s/v 0..1) para RGB. Útil para arco-íris. */
-export function hsv(h: number, s = 1, v = 1): Rgb {
-  const f = (n: number) => {
-    const k = (n + h / 60) % 6;
-    return Math.round(255 * (v - v * s * Math.max(0, Math.min(k, 4 - k, 1))));
+export function hsv(hueDegrees: number, saturation = 1, value = 1): Rgb {
+  const channel = (n: number) => {
+    const k = (n + hueDegrees / 60) % 6;
+    return Math.round(255 * (value - value * saturation * Math.max(0, Math.min(k, 4 - k, 1))));
   };
-  return { r: f(5), g: f(3), b: f(1) };
+  return { r: channel(5), g: channel(3), b: channel(1) };
 }

@@ -1,8 +1,3 @@
-/**
- * Transporte para o navegador (Chrome/Edge) via WebHID.
- * `requestCyclone2()` precisa ser chamado a partir de um clique do usuário.
- */
-
 import { CONFIG_USAGE_PAGE, CYCLONE2_PIDS, VENDOR_ID } from "../constants.js";
 import type { HidTransport } from "./types.js";
 
@@ -12,13 +7,12 @@ export const CYCLONE2_FILTERS: HIDDeviceFilter[] = CYCLONE2_PIDS.map((productId)
   usagePage: CONFIG_USAGE_PAGE,
 }));
 
-/** Abre o seletor de dispositivos do navegador e devolve a interface 0xFFF0 escolhida. */
+/** Abre o seletor do navegador; precisa ser chamado a partir de um gesto do usuário. */
 export async function requestCyclone2(): Promise<WebHidTransport | null> {
   const [device] = await navigator.hid.requestDevice({ filters: CYCLONE2_FILTERS });
   return device ? WebHidTransport.open(device) : null;
 }
 
-/** Dispositivos já autorizados nesta origem (não abre o seletor). */
 export async function getAuthorizedCyclone2(): Promise<HIDDevice[]> {
   const devices = await navigator.hid.getDevices();
   return devices.filter(
@@ -38,7 +32,6 @@ export class WebHidTransport implements HidTransport {
   }
 
   async write(report: Uint8Array): Promise<void> {
-    // WebHID recebe o report ID separado do payload.
     await this.dev.sendReport(report[0], report.slice(1));
   }
 

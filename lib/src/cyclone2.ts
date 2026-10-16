@@ -1,11 +1,3 @@
-/**
- * API de alto nível para o GameSir Cyclone 2.
- *
- * Reproduz o comportamento do proxy `ou` e da fila `Ls` do GameSir Connect:
- * um comando por vez, reenvio a cada 200 ms (até 10 envios) até chegar uma
- * resposta, heartbeat a cada 1 s para manter o report de estado chegando.
- */
-
 import { Cmd, LIGHT_PROFILE_SIZE, Profile, STATE_REPORT_ID } from "./constants.js";
 import { decodeLightProfile, diffRange, encodeLightProfile, type LightProfile } from "./lighting.js";
 import * as P from "./protocol.js";
@@ -20,18 +12,14 @@ interface Pending {
 }
 
 export interface RequestOptions {
-  /** Tempo de espera por resposta antes de reenviar. App: 200 ms. */
   timeoutMs?: number;
-  /** Total de envios antes de desistir. App: 10. */
   maxSends?: number;
-  /** Quais respostas encerram o pedido. Padrão: qualquer resposta 0x0F que não seja notificação. */
   match?: Matcher;
 }
 
-/** Respostas que o app não conta como confirmação de um comando pendente. */
-const NOT_AN_ACK = new Set<number>([Cmd.ReadRgbAck, Cmd.ProfileChanged]);
+const NOTIFICATIONS = new Set<number>([Cmd.ReadRgbAck, Cmd.ProfileChanged]);
 
-const defaultMatch: Matcher = (raw) => !NOT_AN_ACK.has(raw[1]) && !P.isBusyAck(raw);
+const defaultMatch: Matcher = (raw) => !NOTIFICATIONS.has(raw[1]) && !P.isBusyAck(raw);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -44,16 +32,12 @@ export class Cyclone2 {
   private rawListeners = new Set<(raw: Uint8Array) => void>();
   private unsubscribe: () => void;
   private lightCache: Uint8Array | null = null;
-  /** Último report de estado recebido. */
   lastState: GamepadState | null = null;
 
   constructor(private readonly transport: HidTransport) {
     this.unsubscribe = transport.onReport((raw) => this.handleReport(raw));
   }
 
-  // --- Ciclo de vida ------------------------------------------------------------
-
-  /** Envia o heartbeat inicial e começa o heartbeat periódico, como o app faz ao abrir. */
   async start({ heartbeatMs = 1000, testMode = false } = {}): Promise<void> {
     await this.transport.write(P.heartbeat(testMode));
     this.stopHeartbeat();
@@ -73,27 +57,22 @@ export class Cyclone2 {
     await this.transport.close();
   }
 
-  // --- Eventos ------------------------------------------------------------------
-
-  /** Report 0x12: botões, eixos, bateria e cores atuais. */
   onState(listener: (s: GamepadState) => void): () => void {
     this.stateListeners.add(listener);
     return () => this.stateListeners.delete(listener);
   }
 
-  /** O perfil mudou pelo próprio controle (atalho de LED, troca de perfil...). */
+  /** Disparado quando o perfil muda pelo próprio controle (ex.: atalho de LED). */
   onProfileChanged(listener: (c: P.ProfileChange) => void): () => void {
     this.changeListeners.add(listener);
     return () => this.changeListeners.delete(listener);
   }
 
-  /** Todo input report, cru. Útil para explorar o protocolo. */
   onRaw(listener: (raw: Uint8Array) => void): () => void {
     this.rawListeners.add(listener);
     return () => this.rawListeners.delete(listener);
   }
 
-  /** Espera o próximo report de estado (precisa de `start()` antes). */
   nextState(timeoutMs = 3000): Promise<GamepadState> {
     return new Promise((resolve, reject) => {
       const t = setTimeout(() => {
@@ -132,14 +111,11 @@ export class Cyclone2 {
     }
   }
 
-  // --- Envio --------------------------------------------------------------------
-
-  /** Envia sem esperar resposta (`Ls.writeImmediately`). */
   send(packet: Uint8Array): Promise<void> {
     return this.transport.write(packet);
   }
 
-  /** Envia e espera resposta, com reenvio (`Ls.writeWithAck`). Pedidos são serializados. */
+  /** Um pedido por vez; reenvia a cada `timeoutMs` até chegar resposta, como a fila do app. */
   request(packet: Uint8Array, opts: RequestOptions = {}): Promise<Uint8Array> {
     const run = () => this.doRequest(packet, opts);
     const result = this.queue.then(run, run);
@@ -164,14 +140,10 @@ export class Cyclone2 {
     }
   }
 
-  // --- Informação -----------------------------------------------------------------
-
-  /** Resposta crua do ReadFwVersion (0x0A). Ver docs/ para o layout. */
   async readFirmwareVersionRaw(): Promise<Uint8Array> {
     return this.request(P.readFwVersion(), { match: (r) => r[1] === Cmd.ReadFwVersionAck });
   }
 
-  /** Perfil de jogo ativo (1..4; 5 = Shift). */
   async readCurrentProfile(): Promise<number> {
     const raw = await this.request(P.readCurrentProfile(), { match: (r) => r[1] === Cmd.ReadCurrentProfileAck });
     return raw[2];
@@ -181,9 +153,6 @@ export class Cyclone2 {
     await this.request(P.switchProfile(profileNum));
   }
 
-  // --- Perfis crus ------------------------------------------------------------------
-
-  /** Lê um perfil inteiro (680 bytes, ou 635 para o de luz). */
   async readProfile(profileNum: number): Promise<Uint8Array> {
     const out = new Uint8Array(P.profileSize(profileNum));
     for (const pkt of P.readProfile(profileNum)) {
@@ -197,12 +166,9 @@ export class Cyclone2 {
     return out;
   }
 
-  /** Escreve `data` a partir de `offset`, em blocos de 58 bytes, esperando resposta de cada um. */
   async writeProfile(profileNum: number, data: ArrayLike<number>, offset = 0): Promise<void> {
     for (const pkt of P.writeProfile(profileNum, data, offset)) await this.request(pkt);
   }
-
-  // --- Luzes ------------------------------------------------------------------------
 
   async readLightProfile(): Promise<LightProfile> {
     const bytes = await this.readProfile(Profile.Light);
@@ -210,10 +176,7 @@ export class Cyclone2 {
     return decodeLightProfile(bytes);
   }
 
-  /**
-   * Grava o perfil de luz. Como o app, escreve só o trecho que mudou em
-   * relação à última leitura/escrita (lê o perfil antes, se preciso).
-   */
+  /** Escreve só o trecho que mudou desde a última leitura/escrita, como o app. */
   async writeLightProfile(profile: LightProfile): Promise<void> {
     const next = encodeLightProfile(profile);
     if (next.length !== LIGHT_PROFILE_SIZE) throw new Error("perfil de luz com tamanho errado");
@@ -223,7 +186,6 @@ export class Cyclone2 {
     this.lightCache = next;
   }
 
-  /** Lê, modifica e grava o perfil de luz. */
   async updateLightProfile(fn: (p: LightProfile) => undefined | LightProfile): Promise<LightProfile> {
     const p = await this.readLightProfile();
     const next = fn(p) ?? p;
@@ -231,14 +193,10 @@ export class Cyclone2 {
     return next;
   }
 
-  /** `reqSetLightStatus`: tocar/pausar a animação, ou mostrar um frame específico. */
   async setLightStatus(playing: boolean, frameIndex = 0): Promise<void> {
     await this.send(P.setLightStatus(playing, frameIndex));
   }
 
-  // --- Motores, macro, calibração --------------------------------------------------------
-
-  /** Vibra por `durationMs` (padrão do app: 1000 ms). Intensidade 0..255 por motor. */
   async vibrate(left: number, right: number, durationMs = 1000): Promise<void> {
     await this.send(P.vibrate(left, right));
     if (durationMs > 0) {
