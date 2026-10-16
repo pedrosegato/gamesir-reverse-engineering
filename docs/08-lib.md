@@ -77,6 +77,8 @@ button.onclick = async () => {
 | `npx tsx examples/imu.ts` | giroscópio e acelerômetro, 10 linhas/s |
 | `npx tsx examples/game-profile.ts rate` | troca a taxa de report do perfil ativo, confere lendo de volta e restaura |
 | `npx tsx examples/game-profile.ts remap` | A → B por 15 s no perfil ativo (mostra mapeado × físico) e restaura |
+| `npx tsx examples/game-profile.ts macro` | grava a macro A, B, X, Y no L4 por 15 s e restaura |
+| `npx tsx examples/game-profile.ts record` | gravação de macro pelo controle no L4 (`0F 16`), toca e restaura |
 | `npx tsx examples/lights.ts static "#00aaff"` | cor fixa |
 | `npx tsx examples/lights.ts home "#ff0000"` | só o Home |
 | `npx tsx examples/lights.ts preset Rainbow` | preset |

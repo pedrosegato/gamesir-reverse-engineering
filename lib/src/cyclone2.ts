@@ -115,7 +115,8 @@ export class Cyclone2 {
     if (!resp) return;
     if (resp.cmd === Cmd.ProfileChanged) {
       const change = P.parseProfileChange(raw);
-      this.profileCache.delete(change.profileNum);
+      if (change.profileNum === Profile.Current) this.profileCache.clear();
+      else this.profileCache.delete(change.profileNum);
       for (const l of this.changeListeners) l(change);
       return;
     }

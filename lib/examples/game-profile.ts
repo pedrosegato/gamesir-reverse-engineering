@@ -1,8 +1,25 @@
-import { type GameProfile, type GameProfileNumber, KeyCode, ReportRate } from "../src/index.js";
+import {
+  type Buttons,
+  type GameProfile,
+  type GameProfileNumber,
+  KeyCode,
+  keyName,
+  type MacroStep,
+  protocol,
+  ReportRate,
+} from "../src/index.js";
 import { openFirstCyclone2 } from "./_open.js";
 
-const REMAP_SECONDS = 15;
+const WATCH_SECONDS = 15;
+const RECORD_SECONDS = 10;
 const HZ: Record<number, number> = { [ReportRate.Hz250]: 250, [ReportRate.Hz500]: 500, [ReportRate.Hz1000]: 1000 };
+
+const TEST_MACRO: MacroStep[] = [
+  { key: KeyCode.A, holdMs: 200, delayMs: 300 },
+  { key: KeyCode.B, holdMs: 200, delayMs: 300 },
+  { key: KeyCode.X, holdMs: 200, delayMs: 300 },
+  { key: KeyCode.Y, holdMs: 200, delayMs: 0 },
+];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -12,12 +29,40 @@ const profile = (await pad.readCurrentProfile()) as GameProfileNumber;
 console.log(`perfil ativo: ${profile === 5 ? "Shift" : profile}`);
 
 let pendingRestore: GameProfile | null = null;
+let recording = false;
 
 async function restore(): Promise<void> {
+  if (recording) await pad.setMacroRecording("FL1", protocol.MacroRecordState.Cancel);
+  recording = false;
   if (!pendingRestore) return;
+  await pad.readProfile(profile);
   await pad.writeGameProfile(profile, pendingRestore);
   pendingRestore = null;
   console.log("perfil restaurado");
+}
+
+const pressed = (b: Buttons) =>
+  Object.entries(b)
+    .filter(([, down]) => down)
+    .map(([name]) => name)
+    .join(" ") || "-";
+
+const describeMacro = (steps: MacroStep[]) =>
+  steps.map((s) => `${keyName(s.key) ?? s.key} ${s.holdMs}/${s.delayMs} ms`).join(", ") || "(vazia)";
+
+/** Imprime físico × saída a cada mudança, com o tempo desde o início. */
+async function watch(seconds: number): Promise<void> {
+  const start = Date.now();
+  let last = "";
+  const off = pad.onState((s) => {
+    const rec = s.macroRecording ? ` | gravando ${s.macroRecordKey ?? "?"}` : "";
+    const line = `físico: ${pressed(s.physical.buttons)} | saída: ${pressed(s.buttons)}${rec}`;
+    if (line === last) return;
+    last = line;
+    console.log(`${String(Date.now() - start).padStart(6)} ms  ${line}`);
+  });
+  await sleep(seconds * 1000);
+  off();
 }
 
 async function statesPerSecond(ms = 2000): Promise<number> {
@@ -49,22 +94,49 @@ async function testReportRate(): Promise<void> {
 async function testRemap(): Promise<void> {
   pendingRestore = await pad.readGameProfile(profile);
   await pad.remapButton(profile, "A", KeyCode.B);
-  console.log(`A → B por ${REMAP_SECONDS} s (só o A muda; B continua B). Aperte A, depois B.`);
-
-  let last = "";
-  const off = pad.onState((s) => {
-    const { A, B } = s.buttons;
-    const line = `mapeado: A=${+A} B=${+B} | físico: A=${+s.physical.buttons.A} B=${+s.physical.buttons.B}`;
-    if (line === last) return;
-    last = line;
-    console.log(line);
-  });
-  await sleep(REMAP_SECONDS * 1000);
-  off();
-
+  console.log(`A → B por ${WATCH_SECONDS} s (só o A muda; B continua B). Aperte A, depois B.`);
+  await watch(WATCH_SECONDS);
   await restore();
-  const a = (await pad.readGameProfile(profile)).buttons.A;
-  console.log(`A após restaurar: mapEnabled=${a.mapEnabled} mapTo=${a.mapTo.join(",")}`);
+}
+
+async function testMacro(): Promise<void> {
+  pendingRestore = await pad.readGameProfile(profile);
+  await pad.updateGameProfile(profile, (p) => {
+    p.L4 = {
+      ...p.L4,
+      mapEnabled: false,
+      mapTo: [0, 0, 0],
+      macro: { enabled: true, holdToTrigger: false, loop: false, loopMs: 0, steps: TEST_MACRO },
+    };
+    return p;
+  });
+  const saved = (await pad.readGameProfile(profile)).L4.macro;
+  console.log(`L4 gravado: ${describeMacro(saved.steps)}`);
+  console.log(`por ${WATCH_SECONDS} s: aperte e solte o L4 uma vez, espere a sequência, repita.`);
+  await watch(WATCH_SECONDS);
+  await restore();
+}
+
+async function testRecord(): Promise<void> {
+  pendingRestore = await pad.readGameProfile(profile);
+  const offChange = pad.onProfileChanged((c) =>
+    console.log(`aviso do controle: perfil ${c.profileNum} mudou (offset ${c.offset}, ${c.length} B)`),
+  );
+
+  recording = true;
+  await pad.setMacroRecording("FL1", protocol.MacroRecordState.Start);
+  console.log(`gravando macro no L4 por ${RECORD_SECONDS} s: aperte A, B e X, um de cada vez.`);
+  await watch(RECORD_SECONDS);
+  await pad.setMacroRecording("FL1", protocol.MacroRecordState.Stop);
+  recording = false;
+  await sleep(1000);
+  offChange();
+
+  const { macro } = (await pad.readGameProfile(profile)).L4;
+  console.log(`macro gravada (enabled=${macro.enabled}): ${describeMacro(macro.steps)}`);
+  console.log(`por ${WATCH_SECONDS} s: aperte e solte o L4 pra tocar a macro gravada.`);
+  await watch(WATCH_SECONDS);
+  await restore();
 }
 
 process.on("SIGINT", async () => {
@@ -73,15 +145,15 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-switch (command) {
-  case "rate":
-    await testReportRate();
-    break;
-  case "remap":
-    await testRemap();
-    break;
-  default:
-    console.log("uso: game-profile.ts rate | remap");
-}
+const tests: Record<string, () => Promise<void>> = {
+  rate: testReportRate,
+  remap: testRemap,
+  macro: testMacro,
+  record: testRecord,
+};
+
+const run = tests[command];
+if (run) await run();
+else console.log(`uso: game-profile.ts ${Object.keys(tests).join(" | ")}`);
 
 await pad.close();

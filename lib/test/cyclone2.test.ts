@@ -52,6 +52,14 @@ class FakeController implements HidTransport {
     };
   }
 
+  /** Notificação espontânea do controle, ex.: `10 0F …` depois de gravar uma macro. */
+  notify(bytes: number[]): void {
+    const report = new Uint8Array(64);
+    report[0] = RESPONSE_REPORT_ID;
+    report.set(bytes, 1);
+    this.listener?.(report);
+  }
+
   async close(): Promise<void> {}
 }
 
@@ -92,6 +100,16 @@ describe("Cyclone2", () => {
     const fw = await pad.readFirmwareVersion();
     expect(fw.firmware).toBe("1.2.3");
     expect(fake.written).toHaveLength(3);
+  });
+
+  it("aviso de mudança no perfil atual invalida o cache", async () => {
+    const fake = new FakeController();
+    const pad = new Cyclone2(fake);
+    const original = await pad.readGameProfile(1);
+    fake.profiles.get(Profile.P1)?.fill(7, 176, 186);
+    fake.notify([Cmd.ProfileChanged, Profile.Current, 0, 0, 0, 0]);
+    await pad.writeGameProfile(1, original);
+    expect(Array.from(fake.profiles.get(Profile.P1)?.slice(176, 186) ?? [])).toEqual(new Array(10).fill(0));
   });
 
   it("remapeia um botão no perfil de jogo", async () => {
