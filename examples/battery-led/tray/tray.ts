@@ -11,12 +11,12 @@ export interface TrayOptions {
   readonly tooltip: string;
   readonly icon: Rgb;
   readonly menu: () => readonly MenuEntry[];
-  readonly onError?: (message: string) => void;
+  readonly onError?: (operation: string, code: number) => void;
 }
 
 const ICON_ID = 1;
 export const CALLBACK_MESSAGE = w.WM_APP + 1;
-/** O event loop do Node não espera na fila de mensagens do Win32, então ela é esvaziada periodicamente. */
+/** Node's event loop does not wait on the Win32 message queue, so it is drained periodically. */
 const PUMP_EVERY_MS = 100;
 const RETRY_ADD_MS = 3000;
 
@@ -51,7 +51,7 @@ export class Tray {
       hIconSm: null,
     });
     const hwnd = w.CreateWindowExW(0, options.name, options.name, 0, 0, 0, 0, 0, null, null, instance, null);
-    if (!hwnd) throw new Error("CreateWindowExW falhou");
+    if (!hwnd) throw new Error("CreateWindowExW failed");
     this.hwnd = hwnd;
     this.taskbarCreated = w.RegisterWindowMessageW("TaskbarCreated");
     this.tooltip = options.tooltip;
@@ -68,13 +68,13 @@ export class Tray {
     if (this.added && !this.notify(w.NIM_MODIFY)) this.report("NIM_MODIFY");
   }
 
-  /** Só tira o ícone: a janela oculta e o callback dela ficam até o processo terminar. */
+  /** Only removes the icon: the hidden window and its callback live until the process exits. */
   remove(): void {
     clearInterval(this.pumpTimer);
     if (this.added) this.notify(w.NIM_DELETE);
   }
 
-  /** O Explorer apaga os ícones quando reinicia; antes do login completo o NIM_ADD também falha e é repetido. */
+  /** Explorer drops the icons when it restarts, and NIM_ADD can fail before it is ready, so adding is retried. */
   private add(): void {
     this.added = this.notify(w.NIM_ADD);
     if (this.added) return;
@@ -83,10 +83,11 @@ export class Tray {
   }
 
   private report(operation: string): void {
-    const message = `${operation} falhou (erro ${w.GetLastError()}, ícone ${this.icon ? "ok" : "nulo"})`;
-    if (message === this.lastError) return;
-    this.lastError = message;
-    this.options.onError?.(message);
+    const code = w.GetLastError();
+    const key = `${operation}:${code}`;
+    if (key === this.lastError) return;
+    this.lastError = key;
+    this.options.onError?.(operation, code);
   }
 
   private handle(hwnd: w.Pointer, message: number, wParam: number | bigint, lParam: number | bigint): number | bigint {

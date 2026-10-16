@@ -22,7 +22,7 @@ class FakeController implements HidTransport {
   private disconnectListener: ((error?: Error) => void) | null = null;
 
   async write(report: Uint8Array): Promise<void> {
-    if (this.unplugged) throw new Error("dispositivo removido");
+    if (this.unplugged) throw new Error("device removed");
     this.written.push(report);
     if (this.dropNext > 0) {
       this.dropNext--;
@@ -63,7 +63,7 @@ class FakeController implements HidTransport {
 
   unplug(): void {
     this.unplugged = true;
-    this.disconnectListener?.(new Error("dispositivo removido"));
+    this.disconnectListener?.(new Error("device removed"));
   }
 
   notify(bytes: number[]): void {
@@ -79,7 +79,7 @@ class FakeController implements HidTransport {
 const writes = (fake: FakeController) => fake.written.filter((p) => p[1] === Cmd.WriteProfile);
 
 describe("Cyclone2", () => {
-  it("lê o perfil de luz bloco a bloco", async () => {
+  it("reads the light profile chunk by chunk", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
     const light = await pad.readLightProfile();
@@ -87,7 +87,7 @@ describe("Cyclone2", () => {
     expect(light.animations[0].keyFrameCount).toBe(5);
   });
 
-  it("escreve só o trecho alterado", async () => {
+  it("writes only the changed range", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
     await pad.setActiveAnimation(2);
@@ -96,7 +96,7 @@ describe("Cyclone2", () => {
     expect(fake.profiles.get(Profile.Light)?.[LightOffset.ConfigIndex]).toBe(2);
   });
 
-  it("cor fixa grava o frame no slot ativo", async () => {
+  it("a static color writes the frame to the active slot", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
     await pad.setStaticColor({ Home: "#ff0000", LowerLeft: [0, 0, 255] });
@@ -106,7 +106,7 @@ describe("Cyclone2", () => {
     expect(bytes[LightOffset.animation(0)]).toBe(1);
   });
 
-  it("reenvia quando o controle não responde", async () => {
+  it("resends when the controller does not answer", async () => {
     const fake = new FakeController();
     fake.dropNext = 2;
     const pad = new Cyclone2(fake);
@@ -115,7 +115,7 @@ describe("Cyclone2", () => {
     expect(fake.written).toHaveLength(3);
   });
 
-  it("aviso de mudança no perfil atual invalida o cache", async () => {
+  it("a current-profile change notice clears the cache", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
     const original = await pad.readGameProfile(1);
@@ -125,7 +125,7 @@ describe("Cyclone2", () => {
     expect(Array.from(fake.profiles.get(Profile.P1)?.slice(176, 186) ?? [])).toEqual(new Array(10).fill(0));
   });
 
-  it("macro no L4 desliga o mapeamento simples, como o app", async () => {
+  it("a macro on L4 turns off the simple mapping, like the app", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
     await pad.remapButton(1, "A", 10);
@@ -144,7 +144,7 @@ describe("Cyclone2", () => {
     expect((await pad.readGameProfile(1)).L4.macro.enabled).toBe(false);
   });
 
-  it("avisa uma vez quando o controle é removido e para o heartbeat", async () => {
+  it("reports unplugging once and stops the heartbeat", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
     await pad.start({ heartbeatMs: 5 });
@@ -157,22 +157,22 @@ describe("Cyclone2", () => {
     await pad.close();
   });
 
-  it("falha de escrita do heartbeat conta como desconexão", async () => {
+  it("a failed heartbeat write counts as a disconnect", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
     await pad.start({ heartbeatMs: 5 });
     const disconnected = new Promise<Error | undefined>((resolve) => pad.onDisconnect(resolve));
     fake.unplugged = true;
-    expect((await disconnected)?.message).toBe("dispositivo removido");
+    expect((await disconnected)?.message).toBe("device removed");
   });
 
-  it("recusa escrita além do tamanho do perfil no modelo", async () => {
+  it("rejects profiles the model does not have", async () => {
     const pad = new Cyclone2(new FakeController());
     await expect(pad.writeProfile(Profile.Light, new Array(70).fill(0), 600)).rejects.toThrow(RangeError);
-    await expect(pad.readProfile(7)).rejects.toThrow("Cyclone 2 não tem o perfil 7");
+    await expect(pad.readProfile(7)).rejects.toThrow("Cyclone 2 has no profile 7");
   });
 
-  it("remapeia um botão no perfil de jogo", async () => {
+  it("remaps a button in the game profile", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);
     await pad.remapButton(1, "A", 10);

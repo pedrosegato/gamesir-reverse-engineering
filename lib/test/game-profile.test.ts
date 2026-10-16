@@ -14,12 +14,12 @@ function blankImage(): Uint8Array {
   return new Uint8Array(GAME_PROFILE_SIZE);
 }
 
-describe("perfil de jogo", () => {
-  it("ida e volta de um perfil zerado", () => {
+describe("game profile", () => {
+  it("round trip of an all-zero profile", () => {
     expect(encodeGameProfile(decodeGameProfile(blankImage()))).toEqual(blankImage());
   });
 
-  it("campos caem nos offsets do app", () => {
+  it("fields land on the app offsets", () => {
     const img = blankImage();
     img.set(new TextEncoder().encode("Perfil 1"), GameProfileOffset.Name);
     img[GameProfileOffset.ReportRate] = 2;
@@ -45,7 +45,7 @@ describe("perfil de jogo", () => {
     expect(encodeGameProfile(p)).toEqual(img);
   });
 
-  it("macro: passos em big-endian, o 30º sem delay", () => {
+  it("macro: big-endian steps, the 30th without delay", () => {
     const p = decodeGameProfile(blankImage());
     p.L4.macro = {
       enabled: true,
@@ -64,15 +64,15 @@ describe("perfil de jogo", () => {
     expect(decodeGameProfile(img).L4.macro).toEqual(p.L4.macro);
   });
 
-  it("recusa nome que não cabe com o terminador", () => {
+  it("rejects a name that does not fit with the terminator", () => {
     const p = decodeGameProfile(blankImage());
     p.name = "x".repeat(32);
     expect(() => encodeGameProfile(p)).toThrow();
   });
 });
 
-describe("códigos de tecla", () => {
-  it("batem com a tabela do app", () => {
+describe("key codes", () => {
+  it("match the app table", () => {
     expect(KeyCode.A).toBe(9);
     expect(KeyCode.L4).toBe(17);
     expect(KeyCode.KeyW).toBe(79);
@@ -82,8 +82,8 @@ describe("códigos de tecla", () => {
   });
 });
 
-describe("versão de firmware", () => {
-  it("cada caractere vira um componente", () => {
+describe("firmware version", () => {
+  it("each character becomes a component", () => {
     const raw = new Uint8Array(64);
     raw.set([0x0f, 0x0a]);
     raw.set(new TextEncoder().encode("123"), 4);

@@ -24,7 +24,7 @@ export async function findControllers(models: readonly ControllerModel[] = MODEL
 export class NodeHidTransport implements HidTransport {
   private disconnectListeners = new Set<(error?: Error) => void>();
 
-  /** Sem um listener de `error`, o node-hid derruba o processo quando o controle é desconectado. */
+  /** Without an `error` listener, node-hid crashes the process when the controller is unplugged. */
   private constructor(private readonly dev: HID.HIDAsync) {
     dev.on("error", (error: Error) => {
       for (const l of this.disconnectListeners) l(error);

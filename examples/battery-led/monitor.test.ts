@@ -61,7 +61,7 @@ class FakePad implements HidTransport {
   }
 
   unplug(): void {
-    this.disconnectListener?.(new Error("dispositivo removido"));
+    this.disconnectListener?.(new Error("device removed"));
   }
 
   slot(): Uint8Array {
@@ -126,7 +126,7 @@ function start(pads: FakePad[], connection: Connection = "dongle") {
 const lightIs = (shown: string) => (u: MonitorUpdate) => u.kind === "light" && u.shown === shown;
 
 describe("BatteryMonitor", () => {
-  it("mostra a faixa da bateria no slot e devolve a luz original ao parar", async () => {
+  it("shows the battery level in the slot and restores the original light on stop", async () => {
     const pad = new FakePad();
     const original = pad.slot();
     const run = start([pad]);
@@ -140,7 +140,7 @@ describe("BatteryMonitor", () => {
     expect(pad.light[LightOffset.ConfigIndex]).toBe(1);
   });
 
-  it("acompanha a mudança de faixa e o cabo", async () => {
+  it("follows level changes and the cable", async () => {
     const pad = new FakePad();
     const run = start([pad]);
     await run.until(lightIs("medium"));
@@ -153,16 +153,16 @@ describe("BatteryMonitor", () => {
     await run.finish();
   });
 
-  it("no cabo com 100 % fica carregada mesmo quando o controle para de reportar carga", async () => {
+  it("stays full on cable at 100 % after the controller stops reporting charge", async () => {
     const pad = new FakePad();
     pad.percent = 100;
-    const run = start([pad], "cabo");
+    const run = start([pad], "cable");
     await run.until(lightIs("charged"));
     expect(pad.slot()).toEqual(slotWith(pad, indicators.charged.animation));
     await run.finish();
   });
 
-  it("pausar devolve a luz original e retomar reaplica o indicador", async () => {
+  it("pause restores the original light and resume reapplies the indicator", async () => {
     const pad = new FakePad();
     const original = pad.slot();
     const run = start([pad]);
@@ -175,7 +175,7 @@ describe("BatteryMonitor", () => {
     await run.finish();
   });
 
-  it("avisa quando o controle não responde ao heartbeat", async () => {
+  it("reports when the controller does not answer the heartbeat", async () => {
     const pad = new FakePad();
     pad.asleep = true;
     const run = start([pad]);
@@ -184,7 +184,7 @@ describe("BatteryMonitor", () => {
     expect(run.updates.some((u) => u.kind === "battery")).toBe(false);
   });
 
-  it("reconecta e restaura o slot salvo na primeira conexão", async () => {
+  it("reconnects and restores the slot saved on the first connection", async () => {
     const first = new FakePad();
     const original = first.slot();
     const second = new FakePad();

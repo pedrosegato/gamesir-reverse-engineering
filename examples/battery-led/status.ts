@@ -8,7 +8,7 @@ export const LEVELS = [
 
 export type Level = (typeof LEVELS)[number]["name"];
 
-/** A leitura oscila ±1 % perto das bordas. */
+/** The reading jitters by ±1 % near the edges. */
 export const HYSTERESIS = 2;
 
 export interface BatterySample {

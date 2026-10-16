@@ -10,9 +10,8 @@
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
     "paths": {
-      "gamesir-hid": ["./lib/src/index.ts"],
-      "gamesir-hid/node": ["./lib/src/transport/node-hid.ts"]
+      "gamesir-hid": ["../lib/src/index.ts"],
+      "gamesir-hid/node": ["../lib/src/transport/node-hid.ts"]
     }
-  },
-  "include": ["examples", "tools/hardware", "vitest.config.ts"]
+  }
 }

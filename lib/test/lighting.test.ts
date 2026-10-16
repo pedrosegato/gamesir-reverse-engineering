@@ -23,19 +23,19 @@ function handBuiltProfile(slot: number, r: number, g: number, b: number): number
   return profile;
 }
 
-describe("perfil de luz", () => {
-  it("tem 635 bytes, igual ao montado à mão", () => {
+describe("light profile", () => {
+  it("is 635 bytes, same as built by hand", () => {
     expect(handBuiltProfile(0, 1, 2, 3)).toHaveLength(LIGHT_PROFILE_SIZE);
   });
 
-  it("slot 3 do frame é o Home, como o script de bateria usa", () => {
+  it("frame slot 3 is Home, as the battery indicator uses it", () => {
     expect(FRAME_ZONE_ORDER[3]).toBe("Home");
     const p = decodeLightProfile(handBuiltProfile(3, 255, 128, 0));
     expect(p.animations[0].frames[0].Home).toEqual({ r: 255, g: 128, b: 0 });
     expect(p.animations[0].frames[0].LowerLeft).toEqual({ r: 0, g: 0, b: 0 });
   });
 
-  it("decodifica cabeçalho e trailer", () => {
+  it("decodes header and trailer", () => {
     const p = decodeLightProfile(handBuiltProfile(0, 9, 9, 9));
     const a = p.animations[0];
     expect(p.activeAnimation).toBe(0);
@@ -49,7 +49,7 @@ describe("perfil de luz", () => {
     expect(p.audioReactiveMode).toBe(false);
   });
 
-  it("ida e volta preserva os bytes", () => {
+  it("round trip keeps the bytes", () => {
     const bytes = handBuiltProfile(1, 10, 20, 30);
     bytes[LightOffset.ConfigIndex] = 2;
     bytes[LightOffset.animation(1) + 2] = 7;
@@ -57,7 +57,7 @@ describe("perfil de luz", () => {
     expect(Array.from(encodeLightProfile(decodeLightProfile(bytes)))).toEqual(bytes);
   });
 
-  it("velocidade gravada invertida", () => {
+  it("speed is stored inverted", () => {
     expect(encodeSpeed(20)).toBe(0);
     expect(encodeSpeed(0)).toBe(20);
     expect(encodeSpeed(17)).toBe(3);
@@ -65,7 +65,7 @@ describe("perfil de luz", () => {
     expect(decodeSpeed(255)).toBe(0);
   });
 
-  it("diff encontra só o trecho alterado", () => {
+  it("diff finds only the changed range", () => {
     const a = handBuiltProfile(0, 1, 1, 1);
     const b = a.slice();
     b[10] = 99;
@@ -76,7 +76,7 @@ describe("perfil de luz", () => {
 });
 
 describe("presets", () => {
-  it("Flow gera os bytes do app (frame 0: LL LR UL Home UR)", () => {
+  it("Flow produces the app bytes (frame 0: LL LR UL Home UR)", () => {
     const profile = decodeLightProfile(handBuiltProfile(0, 0, 0, 0));
     profile.animations[0] = applyPreset(animation([{}]), "Flow");
     const bytes = encodeLightProfile(profile);
@@ -86,7 +86,7 @@ describe("presets", () => {
     expect(frame0).toBe("00ff00ffff000000ffff0000ff0000");
   });
 
-  it("mantém brilho e effectCount, preenche o resto com preto", () => {
+  it("keeps brightness and effectCount, fills the rest with black", () => {
     const alarm = applyPreset(animation([{ Home: "#ffffff" }], { brightness: 40 }), "Alarm");
     expect(alarm.brightness).toBe(40);
     expect(alarm.effectCount).toBe(5);

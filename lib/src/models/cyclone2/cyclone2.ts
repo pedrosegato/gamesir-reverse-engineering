@@ -51,7 +51,7 @@ export class Cyclone2 extends GameSirController<Cyclone2State> {
   }
 
   async remapButton(profileNum: GameProfileNumber, button: MappedButton, ...keys: number[]): Promise<void> {
-    if (keys.length > 3) throw new RangeError("no máximo 3 teclas por botão");
+    if (keys.length > 3) throw new RangeError("at most 3 keys per button");
     await this.updateGameProfile(profileNum, (p) => {
       const mapTo = [keys[0] ?? 0, keys[1] ?? 0, keys[2] ?? 0] as [number, number, number];
       p.buttons[button] = { ...p.buttons[button], mapEnabled: keys.length > 0, mapTo };

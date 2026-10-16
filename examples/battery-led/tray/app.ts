@@ -3,6 +3,7 @@ import { isSea } from "node:sea";
 import { setTimeout as sleep } from "node:timers/promises";
 import { type Rgb, toRgb } from "gamesir-hid";
 import { indicatorsFor } from "../indicators.js";
+import { describeUpdate } from "../messages.js";
 import { BatteryMonitor, type MonitorUpdate } from "../monitor.js";
 import { indicatorKey } from "../status.js";
 import { isAutostartEnabled, setAutostart } from "./autostart.js";
@@ -22,41 +23,13 @@ interface Shown {
   readonly color: Rgb;
 }
 
-const SEARCHING: Shown = { text: "procurando o controle…", color: IDLE };
-
-function describe(update: MonitorUpdate): Shown | undefined {
-  switch (update.kind) {
-    case "searching":
-    case "disconnected":
-      return SEARCHING;
-    case "connected":
-      return { text: `conectado pelo ${update.connection}`, color: IDLE };
-    case "no-signal":
-      return { text: `sem sinal (${update.connection})`, color: IDLE };
-    case "battery": {
-      const { status, connection } = update;
-      const indicator = indicators[indicatorKey(status)];
-      const percent = status.kind === "charged" ? 100 : status.percent;
-      return { text: `${percent}% · ${indicator.label} (${connection})`, color: toRgb(indicator.icon) };
-    }
-    case "light":
-    case "error":
-      return undefined;
-  }
+function shownFor(update: MonitorUpdate): Shown | undefined {
+  if (update.kind === "light" || update.kind === "error") return undefined;
+  const color = update.kind === "battery" ? toRgb(indicators[indicatorKey(update.status)].icon) : IDLE;
+  return { text: describeUpdate(update, indicators), color };
 }
 
-function logLine(update: MonitorUpdate): string {
-  switch (update.kind) {
-    case "light":
-      return `luz: ${update.shown}`;
-    case "error":
-      return `erro: ${update.message}`;
-    default:
-      return describe(update)?.text ?? update.kind;
-  }
-}
-
-/** Uma segunda instância encontra o pipe já ocupado e sai. */
+/** A second instance finds the pipe taken and exits. */
 function claimInstance(): Promise<Server | null> {
   return new Promise((resolve) => {
     const server = createServer();
@@ -75,7 +48,7 @@ export async function runTray(): Promise<void> {
     process.exit(1);
   });
 
-  let shown = SEARCHING;
+  let shown: Shown = { text: describeUpdate({ kind: "searching" }, indicators), color: IDLE };
   let quitting = false;
   const stop = new AbortController();
 
@@ -83,8 +56,8 @@ export async function runTray(): Promise<void> {
     slot: SLOT,
     indicators,
     onUpdate: (update) => {
-      log(logLine(update));
-      shown = describe(update) ?? shown;
+      log(describeUpdate(update, indicators));
+      shown = shownFor(update) ?? shown;
       refresh();
     },
   });
@@ -126,7 +99,7 @@ export async function runTray(): Promise<void> {
     tooltip: tooltip(),
     icon: IDLE,
     menu,
-    onError: (message) => log(`bandeja: ${message}`),
+    onError: (operation, code) => log(`bandeja: ${operation} falhou (erro ${code})`),
   });
   log(tray.added ? "ícone adicionado na bandeja" : "ícone ainda não adicionado; tentando de novo");
   const running = monitor.run(stop.signal).catch((error: Error) => log(`falha: ${error.stack ?? error.message}`));

@@ -3,15 +3,15 @@ import { Cmd, LIGHT_PROFILE_SIZE, protocol as P, Profile } from "../src/index.js
 
 const head = (pkt: Uint8Array, n = 8) => Array.from(pkt.slice(0, n));
 
-describe("pacotes", () => {
-  it("sempre 64 bytes, começando com 0x0F", () => {
+describe("packets", () => {
+  it("always 64 bytes, starting with 0x0F", () => {
     for (const pkt of [P.heartbeat(), P.readFwVersion(), P.vibrate(255, 0), P.switchProfile(2)]) {
       expect(pkt).toHaveLength(64);
       expect(pkt[0]).toBe(0x0f);
     }
   });
 
-  it("comandos simples iguais aos do app", () => {
+  it("simple commands match the app", () => {
     expect(head(P.heartbeat(), 3)).toEqual([15, 242, 0]);
     expect(head(P.heartbeat(true), 3)).toEqual([15, 242, 1]);
     expect(head(P.readFwVersion(), 2)).toEqual([15, 9]);
@@ -23,7 +23,7 @@ describe("pacotes", () => {
     expect(head(P.quickUpdate(), 4)).toEqual([15, 23, 85, 136]);
   });
 
-  it("leitura do perfil de luz em 11 blocos de até 58 bytes", () => {
+  it("reads the light profile in 11 chunks of up to 58 bytes", () => {
     const pkts = P.readProfile(Profile.Light, LIGHT_PROFILE_SIZE);
     expect(pkts).toHaveLength(Math.ceil(635 / 58));
     expect(head(pkts[0], 6)).toEqual([15, 4, 32, 0, 0, 58]);
@@ -31,7 +31,7 @@ describe("pacotes", () => {
     expect(head(pkts[pkts.length - 1], 6)).toEqual([15, 4, 32, 2, 68, 635 - 580]);
   });
 
-  it("escrita em blocos com offset", () => {
+  it("writes in chunks with an offset", () => {
     const data = Array.from({ length: 70 }, (_, i) => i);
     const pkts = P.writeProfile(Profile.P1, data, 600);
     expect(pkts).toHaveLength(2);
@@ -39,7 +39,7 @@ describe("pacotes", () => {
     expect(head(pkts[1], 7)).toEqual([15, 3, 1, 2, 146, 12, 58]);
   });
 
-  it("interpreta respostas", () => {
+  it("parses responses", () => {
     const ack = [15, Cmd.Ack, 1];
     expect(P.isBusyAck(ack)).toBe(true);
     const chunk = P.parseProfileChunk([15, 5, 32, 1, 2, 3, 9, 8, 7, 0, 0]);

@@ -9,7 +9,7 @@ export const MAX_SPEED = 20;
 export const MAX_BRIGHTNESS = 100;
 export const STANDBY_MINUTES = [0, 1, 5, 10, 20] as const;
 
-/** Difere da ordem do report de estado (`LED_ZONES`). */
+/** Differs from the state report order (`LED_ZONES`). */
 export const FRAME_ZONE_ORDER = [
   "LowerLeft",
   "LowerRight",
@@ -36,15 +36,15 @@ export const LightOffset = {
   Reserved: TRAILER_OFFSET + 7,
 } as const;
 
-/** No Cyclone 2: LowerLeft/LowerRight = laterais, Home = botão Home, UpperRight = LED do centro, UpperLeft = sem LED. */
+/** On the Cyclone 2: LowerLeft/LowerRight = sides, Home = Home button, UpperRight = center LED, UpperLeft = no LED. */
 export type Frame = Record<LedZone, Rgb>;
 export type FrameInput = Partial<Record<LedZone, ColorInput>>;
 
 export interface Animation {
   keyFrameCount: number;
-  /** Sempre 5; o app nunca altera. */
+  /** Always 5; the app never changes it. */
   effectCount: number;
-  /** 0..20, maior = mais rápido. */
+  /** 0..20, higher is faster. */
   speed: number;
   brightness: number;
   frames: Frame[];
@@ -57,7 +57,7 @@ export interface LightProfile {
   userEffectIndex: number;
   profileLed: Rgb;
   raiseWakeUp: boolean;
-  /** Minutos; 0 = nunca dorme. */
+  /** Minutes; 0 = never sleeps. */
   standbyTime: number;
   reserved: number[];
 }
@@ -84,7 +84,7 @@ export function animation(
   { speed = 10, brightness = MAX_BRIGHTNESS, effectCount = 5 } = {},
 ): Animation {
   if (frames.length < 1 || frames.length > FRAME_COUNT) {
-    throw new RangeError(`animação precisa de 1..${FRAME_COUNT} frames`);
+    throw new RangeError(`an animation needs 1..${FRAME_COUNT} frames`);
   }
   const full = frames.map(frame);
   while (full.length < FRAME_COUNT) full.push(frame());
@@ -92,7 +92,7 @@ export function animation(
 }
 
 export function decodeLightProfile(bytes: ArrayLike<number>): LightProfile {
-  if (bytes.length !== LIGHT_PROFILE_SIZE) throw new RangeError(`perfil de luz tem ${LIGHT_PROFILE_SIZE} bytes`);
+  if (bytes.length !== LIGHT_PROFILE_SIZE) throw new RangeError(`a light profile has ${LIGHT_PROFILE_SIZE} bytes`);
   const b = Uint8Array.from(bytes);
   const rgbAt = (o: number): Rgb => ({ r: b[o], g: b[o + 1], b: b[o + 2] });
 
@@ -130,7 +130,8 @@ export function decodeLightProfile(bytes: ArrayLike<number>): LightProfile {
 }
 
 export function encodeLightProfile(p: LightProfile): Uint8Array {
-  if (p.animations.length !== ANIMATION_COUNT) throw new RangeError(`perfil de luz tem ${ANIMATION_COUNT} animações`);
+  if (p.animations.length !== ANIMATION_COUNT)
+    throw new RangeError(`a light profile has ${ANIMATION_COUNT} animations`);
   const out = new Uint8Array(LIGHT_PROFILE_SIZE);
   const putRgb = (o: number, c: Rgb) => out.set([c.r, c.g, c.b], o);
 

@@ -23,9 +23,9 @@ export function circleRgba(color: Rgb, size = ICON_SIZE): Uint8Array {
 }
 
 /**
- * Formato que `CreateIconFromResourceEx` aceita e que vai dentro de um `.ico`: BITMAPINFOHEADER com a altura
- * dobrada (cor + máscara), pixels BGRA de baixo para cima e a máscara AND de 1 bit, zerada porque o alfa já
- * recorta o círculo.
+ * Format accepted by `CreateIconFromResourceEx` and stored inside `.ico` files: BITMAPINFOHEADER with doubled
+ * height (color + mask), bottom-up BGRA pixels and a 1-bit AND mask, left empty because alpha already cuts out
+ * the circle.
  */
 export function iconResource(color: Rgb, size = ICON_SIZE): Uint8Array {
   const rgba = circleRgba(color, size);

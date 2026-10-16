@@ -1,4 +1,4 @@
-// Separa os módulos do bundle webpack 4 sem executar nenhum deles.
+// Splits the modules of a webpack 4 bundle without running any of them.
 const fs = require("node:fs"),
   vm = require("node:vm"),
   path = require("node:path");

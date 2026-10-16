@@ -6,7 +6,7 @@ const FUN_RESERVED_SIZE = 17;
 const MACRO_STEP_COUNT = 30;
 const CURVE_POINT_COUNT = 5;
 
-/** Mesma ordem dos blocos no perfil. */
+/** Same order as the blocks in the profile. */
 export const MAPPED_BUTTONS = [
   "Up",
   "Down",
@@ -39,7 +39,7 @@ export interface KeyMapping {
   /** Hz, 0..30. */
   turboSpeed: number;
   mapEnabled: boolean;
-  /** `KeyCode`s pressionados juntos; 0 = vazio. */
+  /** `KeyCode`s pressed together; 0 = empty. */
   mapTo: [number, number, number];
   toggle: boolean;
 }
@@ -47,16 +47,16 @@ export interface KeyMapping {
 export interface MacroStep {
   key: number;
   holdMs: number;
-  /** Do início deste passo ao início do próximo (o hold fica dentro). O 30º passo não tem delay no perfil. */
+  /** From the start of this step to the start of the next (the hold is included). The 30th step has no delay in the profile. */
   delayMs: number;
 }
 
 export interface Macro {
   enabled: boolean;
-  /** "Long Press": toca enquanto o botão estiver pressionado. Desligado ("Single Press"): um toque inicia, outro interrompe. */
+  /** "Long Press": plays while the button is held. Off ("Single Press"): one tap starts it, another stops it. */
   holdToTrigger: boolean;
   loop: boolean;
-  /** Do fim do último passo até recomeçar. */
+  /** From the end of the last step until it starts again. */
   loopMs: number;
   steps: MacroStep[];
 }
@@ -67,7 +67,7 @@ export interface BackButton extends KeyMapping {
 
 export interface Deadzone {
   enabled: boolean;
-  /** Todos em % do curso, 0..100. */
+  /** All in % of travel, 0..100. */
   start: number;
   end: number;
   antiStart: number;
@@ -78,7 +78,7 @@ export interface Curve {
   enabled: boolean;
   type: number;
   curvature: number;
-  /** 5 pontos (entrada, saída) em 0..255, normalizados entre os limites da deadzone. */
+  /** 5 (input, output) points in 0..255, normalized between the deadzone limits. */
   points: [number, number][];
 }
 
@@ -103,7 +103,7 @@ export interface AxisMapping {
   mouseDpi: number;
   output: number;
   cross: number;
-  /** `KeyCode`s usados quando `output` = Keys. */
+  /** `KeyCode`s used when `output` = Keys. */
   up: number;
   down: number;
   left: number;
@@ -113,7 +113,7 @@ export interface AxisMapping {
 
 export interface Stick {
   enabled: boolean;
-  /** 0 = radial; diferente de 0 = "Raw". */
+  /** 0 = radial; non-zero = "Raw". */
   square: number;
   deadzone: Deadzone;
   curve: Curve;
@@ -228,7 +228,7 @@ function readMacro(r: ByteReader): Macro {
 }
 
 function writeMacro(w: ByteWriter, m: Macro): void {
-  if (m.steps.length > MACRO_STEP_COUNT) throw new RangeError(`macro com mais de ${MACRO_STEP_COUNT} passos`);
+  if (m.steps.length > MACRO_STEP_COUNT) throw new RangeError(`a macro has at most ${MACRO_STEP_COUNT} steps`);
   const flags =
     (m.enabled ? MacroFlag.Enabled : 0) |
     (m.holdToTrigger ? MacroFlag.HoldToTrigger : 0) |
@@ -356,12 +356,12 @@ function readName(r: ByteReader): string {
 
 function writeName(w: ByteWriter, name: string): void {
   const encoded = new TextEncoder().encode(name);
-  if (encoded.length >= NAME_SIZE) throw new RangeError(`nome do perfil com mais de ${NAME_SIZE - 1} bytes`);
+  if (encoded.length >= NAME_SIZE) throw new RangeError(`profile name longer than ${NAME_SIZE - 1} bytes`);
   w.bytes(Array.from(encoded), NAME_SIZE);
 }
 
 export function decodeGameProfile(bytes: ArrayLike<number>): GameProfile {
-  if (bytes.length !== GAME_PROFILE_SIZE) throw new RangeError(`perfil de jogo tem ${GAME_PROFILE_SIZE} bytes`);
+  if (bytes.length !== GAME_PROFILE_SIZE) throw new RangeError(`a game profile has ${GAME_PROFILE_SIZE} bytes`);
   const r = new ByteReader(Uint8Array.from(bytes));
   const name = readName(r);
   const fun = readFunData(r);
@@ -398,6 +398,6 @@ export function encodeGameProfile(p: GameProfile): Uint8Array {
   writeMotion(w, p.gyroAim);
   writeMotion(w, p.gyroTilt);
   const out = w.toBytes();
-  if (out.length !== GAME_PROFILE_SIZE) throw new Error(`perfil codificado com ${out.length} bytes`);
+  if (out.length !== GAME_PROFILE_SIZE) throw new Error(`encoded profile has ${out.length} bytes`);
   return out;
 }

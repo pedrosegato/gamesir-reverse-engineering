@@ -13,7 +13,7 @@ export const hidFilters = (models: readonly ControllerModel[] = MODELS): HIDDevi
     Object.values(m.pids).map((productId) => ({ vendorId: VENDOR_ID, productId, usagePage: CONFIG_USAGE_PAGE })),
   );
 
-/** Precisa ser chamado a partir de um gesto do usuário (clique, tecla). */
+/** Must be called from a user gesture (click, key press). */
 export async function requestController(models: readonly ControllerModel[] = MODELS): Promise<OpenedController | null> {
   const [device] = await navigator.hid.requestDevice({ filters: hidFilters(models) });
   const model = device && modelForPid(device.productId, models);

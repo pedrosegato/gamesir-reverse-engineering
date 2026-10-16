@@ -4,12 +4,12 @@ import { findControllers, NodeHidTransport } from "gamesir-hid/node";
 import type { Indicators } from "./indicators.js";
 import { type BatterySample, type BatteryStatus, classify, type IndicatorKey, indicatorKey } from "./status.js";
 
-export type Connection = "cabo" | "sem fio" | "dongle";
+export type Connection = "cable" | "wireless" | "dongle";
 
 const CONNECTIONS: Partial<Record<number, Connection>> = {
-  [Cyclone2Pid.Wired]: "cabo",
-  [Cyclone2Pid.WiredAdc]: "cabo",
-  [Cyclone2Pid.Wireless]: "sem fio",
+  [Cyclone2Pid.Wired]: "cable",
+  [Cyclone2Pid.WiredAdc]: "cable",
+  [Cyclone2Pid.Wireless]: "wireless",
   [Cyclone2Pid.WirelessDongle]: "dongle",
 };
 
@@ -22,14 +22,14 @@ export type MonitorUpdate =
   | { readonly kind: "no-signal"; readonly connection: Connection }
   | { readonly kind: "light"; readonly shown: LightShown }
   | { readonly kind: "disconnected" }
-  | { readonly kind: "error"; readonly message: string };
+  | { readonly kind: "error"; readonly during: "open" | "session" | "light"; readonly message: string };
 
 export interface FoundPad {
   readonly transport: HidTransport;
   readonly connection: Connection;
 }
 
-/** Entre amostras o heartbeat para e o controle deixa de transmitir estado, poupando a bateria dele. */
+/** Between samples the heartbeat stops and the controller stops streaming its state, which saves its battery. */
 export interface MonitorTiming {
   readonly sampleEveryMs: number;
   readonly sampleTimeoutMs: number;
@@ -62,7 +62,7 @@ interface Session {
 async function findPad(): Promise<FoundPad | null> {
   const [found] = await findControllers();
   if (!found) return null;
-  return { transport: await NodeHidTransport.open(found.path), connection: CONNECTIONS[found.productId] ?? "cabo" };
+  return { transport: await NodeHidTransport.open(found.path), connection: CONNECTIONS[found.productId] ?? "cable" };
 }
 
 const wait = (ms: number, signal: AbortSignal) => sleep(ms, undefined, { signal }).catch(() => undefined);
@@ -73,7 +73,7 @@ export class BatteryMonitor {
   private paused = false;
   private stopping = false;
   private session: Session | undefined;
-  /** Só na primeira conexão: depois de reconectar, o slot já contém o indicador. */
+  /** Only on the first connection: after a reconnect the slot already holds the indicator. */
   private saved: SavedLight | undefined;
 
   constructor(private readonly options: MonitorOptions) {
@@ -85,7 +85,7 @@ export class BatteryMonitor {
     return this.paused;
   }
 
-  /** Termina quando `signal` dispara, depois de devolver a luz original ao controle. */
+  /** Returns once `signal` fires, after putting the original light back. */
   async run(signal: AbortSignal): Promise<void> {
     while (!signal.aborted) {
       const found = await this.connect(signal);
@@ -112,7 +112,7 @@ export class BatteryMonitor {
         if (!announced) this.report({ kind: "searching" });
         announced = true;
       } catch (error) {
-        this.report({ kind: "error", message: `não abriu o controle: ${(error as Error).message}` });
+        this.report({ kind: "error", during: "open", message: (error as Error).message });
       }
       await wait(this.timing.searchEveryMs, signal);
     }
@@ -136,7 +136,7 @@ export class BatteryMonitor {
       }
     } catch (error) {
       if (pad.isConnected) {
-        this.report({ kind: "error", message: (error as Error).message });
+        this.report({ kind: "error", during: "session", message: (error as Error).message });
         await wait(this.timing.searchEveryMs, until);
       }
     } finally {
@@ -168,12 +168,12 @@ export class BatteryMonitor {
     await this.apply(session);
   }
 
-  /** Com a carga completa o controle deixa de reportar "carregando", mas no cabo ele continua na energia. */
+  /** Once fully charged the controller stops reporting charging, but on cable it is still powered. */
   private async readBattery(pad: Cyclone2, connection: Connection): Promise<BatterySample | null> {
     const next = pad.nextState(this.timing.sampleTimeoutMs).catch(() => null);
     await pad.send(protocol.heartbeat());
     const state = await next;
-    return state && { percent: state.batteryLevel, powered: state.chargeState !== 0 || connection === "cabo" };
+    return state && { percent: state.batteryLevel, powered: state.chargeState !== 0 || connection === "cable" };
   }
 
   private target(session: Session): LightShown | undefined {
@@ -181,7 +181,7 @@ export class BatteryMonitor {
     return session.status && indicatorKey(session.status);
   }
 
-  /** Escritas em fila: cada uma lê o perfil de luz e grava só a diferença. */
+  /** Writes are queued: each reads the light profile and writes only the difference. */
   private apply(session: Session): Promise<void> {
     session.writes = session.writes.then(async () => {
       const target = this.target(session);
@@ -191,7 +191,7 @@ export class BatteryMonitor {
         session.shown = target;
         this.report({ kind: "light", shown: target });
       } catch (error) {
-        this.report({ kind: "error", message: `não gravou a luz: ${(error as Error).message}` });
+        this.report({ kind: "error", during: "light", message: (error as Error).message });
       }
     });
     return session.writes;

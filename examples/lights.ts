@@ -3,7 +3,7 @@ import { findControllers, NodeHidTransport } from "gamesir-hid/node";
 
 const [command = "static", arg = "#00aaff"] = process.argv.slice(2);
 const [device] = await findControllers();
-if (!device) throw new Error("nenhum controle encontrado");
+if (!device) throw new Error("no controller found");
 const pad = new Cyclone2(await NodeHidTransport.open(device.path));
 await pad.start();
 

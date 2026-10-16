@@ -8,7 +8,7 @@ export class ByteReader {
   }
 
   u8(): number {
-    if (this.pos >= this.buf.length) throw new RangeError("leitura passou do fim do buffer");
+    if (this.pos >= this.buf.length) throw new RangeError("read past the end of the buffer");
     return this.buf[this.pos++];
   }
 
@@ -33,7 +33,7 @@ export class ByteWriter {
   }
 
   u8(v: number): this {
-    if (!Number.isInteger(v) || v < 0 || v > 0xff) throw new RangeError(`byte fora do intervalo: ${v}`);
+    if (!Number.isInteger(v) || v < 0 || v > 0xff) throw new RangeError(`byte out of range: ${v}`);
     this.out.push(v);
     return this;
   }

@@ -1,7 +1,7 @@
 {
   "name": "gamesir-hid",
   "version": "0.1.0",
-  "description": "Controle do GameSir Cyclone 2 via HID (LEDs, perfis, vibração, estado), a partir da engenharia reversa do GameSir Connect",
+  "description": "Control GameSir controllers over HID (lights, profiles, macros, vibration, live state), reverse-engineered from GameSir Connect",
   "keywords": [
     "gamesir",
     "cyclone-2",

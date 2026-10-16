@@ -4,15 +4,15 @@ import { circleRgba, ICON_SIZE, icoFile, iconResource } from "./icon.js";
 const color = { r: 1, g: 2, b: 3 };
 const at = (x: number, y: number) => (y * ICON_SIZE + x) * 4;
 
-describe("ícone da bandeja", () => {
-  it("centro com a cor e cantos transparentes", () => {
+describe("tray icon", () => {
+  it("colored center and transparent corners", () => {
     const rgba = circleRgba(color);
     expect(rgba.length).toBe(ICON_SIZE * ICON_SIZE * 4);
     expect([...rgba.slice(at(16, 16), at(16, 16) + 4)]).toEqual([1, 2, 3, 255]);
     expect(rgba[at(0, 0) + 3]).toBe(0);
   });
 
-  it("recurso de ícone: cabeçalho, BGRA de baixo para cima e máscara", () => {
+  it("icon resource: header, bottom-up BGRA and mask", () => {
     const resource = iconResource(color);
     const view = new DataView(resource.buffer);
     expect(view.getUint32(0, true)).toBe(40);
@@ -32,7 +32,7 @@ describe("ícone da bandeja", () => {
     ]);
   });
 
-  it(".ico com uma imagem por tamanho; 256 vira 0 no diretório", () => {
+  it(".ico with one image per size; 256 is stored as 0", () => {
     const sizes = [16, 48, 256];
     const ico = icoFile(color, sizes);
     const view = new DataView(ico.buffer);

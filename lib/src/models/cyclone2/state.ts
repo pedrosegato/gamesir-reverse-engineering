@@ -13,7 +13,7 @@ const Offset = {
   LedColors: 38,
   MacroRecord: 53,
   PhysicalInputs: 54,
-  /** L4/R4/M só existem aqui (byte `System` das entradas físicas); valem para os dois blocos. */
+  /** L4/R4/M only exist here (`System` byte of the physical inputs); they apply to both blocks. */
   BackButtons: 60,
 } as const;
 
@@ -67,11 +67,11 @@ export interface Vec3 {
 }
 
 /**
- * int16 crus, sem calibração. Com o controle deitado e os botões para cima: X → lateral direita,
- * Y → sai da face, Z → para trás. Giroscópio pela regra da mão direita.
+ * Raw int16, uncalibrated. With the controller lying flat, buttons up: X → right side,
+ * Y → out of the face, Z → toward the player. The gyro follows the right-hand rule.
  */
 export interface Imu {
-  /** 8 bits; dá a volta em 255. */
+  /** 8 bits; wraps after 255. */
   counter: number;
   gyro: Vec3;
   accel: Vec3;
@@ -86,7 +86,7 @@ export interface Inputs {
   rightTrigger: number;
 }
 
-/** Os campos de `Inputs` no topo já passaram pelo mapeamento do perfil ativo. */
+/** The top-level `Inputs` fields have already gone through the active profile's mapping. */
 export interface Cyclone2State extends Inputs {
   physical: Inputs;
   imu: Imu;
@@ -145,7 +145,7 @@ function parseInputs(d: Uint8Array, base: number): Inputs {
 }
 
 export function parseState(data: ArrayLike<number>): Cyclone2State {
-  if (!isStateReport(data)) throw new Error("não é um report de estado 0x12 completo");
+  if (!isStateReport(data)) throw new Error("not a complete 0x12 state report");
   const d = Uint8Array.from(data);
   const macro = d[Offset.MacroRecord];
   const view = new DataView(d.buffer, d.byteOffset, d.byteLength);

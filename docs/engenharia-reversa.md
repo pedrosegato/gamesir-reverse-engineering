@@ -16,7 +16,7 @@ O repositório não inclui o app.
 
 ```bash
 npx --yes @electron/asar extract "<instalação>/resources/app.asar" decompiled
-./tools/prepare-analysis.sh decompiled
+docs/scripts/prepare-analysis.sh decompiled
 ```
 
 | Saída em `analysis/` | Conteúdo |
@@ -69,16 +69,7 @@ O Tegenaria Lite não tem perfis no app: só vibração e teste de botões, com 
 
 ## Verificação no hardware
 
-Cyclone 2 com firmware 3.4.6, pelo dongle `0x100B` (firmware 1.2.1) e pelo cabo `0x1053`, no Windows. Cada comportamento foi exercitado com os scripts de `tools/hardware/` (`npx tsx tools/hardware/<script>.ts`, da raiz) e comparado com o código do app:
-
-| Script | Mede |
-|---|---|
-| `sniff.ts` | coleções HID do VID `0x3537` e respostas cruas |
-| `check.ts` | conexão, firmware, ritmo do estado, bateria, perfis, vibração, LED |
-| `monitor.ts` · `imu.ts` | estado ao vivo · IMU |
-| `game-profile.ts rate\|remap\|macro\|modes\|record` | escrita do perfil de jogo e macros, restaurando o perfil |
-| `probe.ts` | respostas a gravação e troca de perfil, "device info", parar e cancelar gravação |
-| `dump-profiles.ts` | todos os perfis em JSON |
+Cyclone 2 com firmware 3.4.6, pelo dongle `0x100B` (firmware 1.2.1) e pelo cabo `0x1053`, no Windows. Cada comportamento foi exercitado no controle com a lib e comparado com o código do app.
 
 Os codecs dos perfis foram conferidos com um dump real (`lib/test/fixtures/dump-dongle-fw346.json`): decodificar e recodificar devolve os mesmos bytes.
 

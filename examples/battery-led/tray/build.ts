@@ -30,7 +30,7 @@ const { values } = parseArgs({
     target: { type: "string", default: `${process.platform}-${process.arch}` },
   },
 });
-if (!/^\d+\.\d+\.\d+$/.test(values.version)) throw new Error(`versão inválida: ${values.version}`);
+if (!/^\d+\.\d+\.\d+$/.test(values.version)) throw new Error(`invalid version: ${values.version}`);
 const [platform, arch] = values.target.split("-");
 const exe = join(dist, platform === "win32" ? "cyclone2-battery.exe" : "cyclone2-battery");
 
@@ -42,7 +42,7 @@ function addons(): Record<string, string> {
   };
 }
 
-/** Os carregadores do node-hid e do koffi procuram o `.node` no disco; no executável ele vem dos assets do SEA. */
+/** The node-hid and koffi loaders look for the `.node` file on disk; in the executable it comes from the SEA assets. */
 const seaAddons: Plugin = {
   name: "sea-addons",
   setup(esbuild) {
@@ -67,13 +67,13 @@ async function bundle(outfile: string): Promise<void> {
     platform: "node",
     format: "cjs",
     target: "node22",
-    tsconfig: join(here, "..", "..", "..", "tsconfig.json"),
+    tsconfig: join(here, "..", "..", "tsconfig.json"),
     plugins: [seaAddons],
     logLevel: "warning",
   });
 }
 
-/** O cache de código do V8 só vale para o mesmo binário que gerou o blob. */
+/** V8's code cache is only valid for the binary that generated the blob. */
 function seaBlob(main: string, output: string): void {
   const config = join(dist, "sea-config.json");
   const useCodeCache = values.node === process.execPath;
@@ -114,11 +114,11 @@ function brand(file: string): void {
   writeFileSync(file, Buffer.from(executable.generate()));
 }
 
-/** Sem isso o Windows abre uma janela de console junto com o app. */
+/** Without this Windows opens a console window next to the app. */
 function setGuiSubsystem(file: string): void {
   const image = readFileSync(file);
   const pe = image.readUInt32LE(0x3c);
-  if (image.toString("latin1", pe, pe + 4) !== "PE\0\0") throw new Error(`${file} não é um executável PE`);
+  if (image.toString("latin1", pe, pe + 4) !== "PE\0\0") throw new Error(`${file} is not a PE executable`);
   const optionalHeader = pe + 4 + 20;
   image.writeUInt16LE(IMAGE_SUBSYSTEM_WINDOWS_GUI, optionalHeader + 68);
   writeFileSync(file, image);

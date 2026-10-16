@@ -5,7 +5,7 @@ export const Cyclone2Pid = {
   WirelessDongle: 0x100b,
 } as const;
 
-/** Dongle sem controle conectado; não responde a comandos. */
+/** Dongle with no controller connected; does not answer commands. */
 export const DONGLE_IDLE_PID = 0x0575;
 
 export const GAME_PROFILE_SIZE = 680;

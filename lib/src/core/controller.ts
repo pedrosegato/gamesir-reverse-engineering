@@ -33,7 +33,7 @@ export class GameSirController<State = unknown> {
   private disconnectListeners = new Set<(error?: Error) => void>();
   private connected = true;
   private unsubscribe: () => void;
-  /** Base para escrever só o trecho alterado. */
+  /** Baseline for writing only the changed range. */
   private profileCache = new Map<number, Uint8Array>();
   lastState: State | null = null;
 
@@ -72,7 +72,7 @@ export class GameSirController<State = unknown> {
     await this.transport.close();
   }
 
-  /** Dispara uma vez; para continuar, feche e abra de novo. */
+  /** Fires once; to keep going, close and open again. */
   onDisconnect(listener: (error?: Error) => void): () => void {
     this.disconnectListeners.add(listener);
     return () => this.disconnectListeners.delete(listener);
@@ -83,7 +83,7 @@ export class GameSirController<State = unknown> {
     return () => this.stateListeners.delete(listener);
   }
 
-  /** Mudanças feitas pelo próprio controle: M + analógico, fim de gravação de macro. */
+  /** Changes made by the controller itself: M + stick, end of a macro recording. */
   onProfileChanged(listener: (c: P.ProfileChange) => void): () => void {
     this.changeListeners.add(listener);
     return () => this.changeListeners.delete(listener);
@@ -98,7 +98,7 @@ export class GameSirController<State = unknown> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         off();
-        reject(new Error("nenhum report de estado recebido; chamou start()?"));
+        reject(new Error("no state report received; was start() called?"));
       }, timeoutMs);
       const off = this.onState((s) => {
         clearTimeout(timer);
@@ -124,7 +124,7 @@ export class GameSirController<State = unknown> {
     return P.parseFirmwareVersion(raw);
   }
 
-  /** 1..4, ou 5 quando a camada Shift está ativa. */
+  /** 1..4, or 5 when the Shift layer is active. */
   async readCurrentProfile(): Promise<number> {
     const raw = await this.request(P.readCurrentProfile(), { match: (r) => r[1] === Cmd.ReadCurrentProfileAck });
     return raw[2];
@@ -149,7 +149,8 @@ export class GameSirController<State = unknown> {
   }
 
   async writeProfile(profileNum: number, data: ArrayLike<number>, offset = 0): Promise<void> {
-    if (offset + data.length > this.profileSize(profileNum)) throw new RangeError("escrita passa do fim do perfil");
+    if (offset + data.length > this.profileSize(profileNum))
+      throw new RangeError("write goes past the end of the profile");
     for (const pkt of P.writeProfile(profileNum, data, offset)) await this.request(pkt);
     const cached = this.profileCache.get(profileNum);
     if (cached) cached.set(Array.from(data), offset);
@@ -172,7 +173,7 @@ export class GameSirController<State = unknown> {
 
   private profileSize(profileNum: number): number {
     const size = this.model.profileSizes[profileNum];
-    if (size === undefined) throw new RangeError(`${this.model.name} não tem o perfil ${profileNum}`);
+    if (size === undefined) throw new RangeError(`${this.model.name} has no profile ${profileNum}`);
     return size;
   }
 
@@ -221,7 +222,7 @@ export class GameSirController<State = unknown> {
         const raw = await Promise.race([answered, sleep(timeoutMs).then(() => null)]);
         if (raw) return raw;
       }
-      throw new Error(`sem resposta para ${P.parseResponse(packet)?.name ?? "comando"} após ${maxSends} envios`);
+      throw new Error(`no response to ${P.parseResponse(packet)?.name ?? "command"} after ${maxSends} sends`);
     } finally {
       if (this.pending?.resolve === resolveFn) this.pending = null;
     }

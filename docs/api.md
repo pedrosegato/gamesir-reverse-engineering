@@ -171,12 +171,4 @@ Um modelo novo do mesmo protocolo precisa de um `ControllerModel` (PIDs, tamanho
 
 ## Exemplos
 
-Em `examples/`, rodados da raiz do repositório depois de `npm install`:
-
-| Comando | Faz |
-|---|---|
-| `npm run battery-led -- [--slot 1-4] [--zone Home]` | indicador de bateria num LED, com reconexão automática |
-| `npx tsx examples/lights.ts static\|home\|preset\|slot\|show` | luz |
-| `npx tsx examples/vibrate.ts` | vibração |
-
-Os scripts usados na validação do protocolo ficam em `tools/hardware/` ([engenharia-reversa.md](engenharia-reversa.md#verificação-no-hardware)).
+Em [`examples/`](../examples).

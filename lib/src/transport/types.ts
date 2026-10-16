@@ -1,4 +1,4 @@
-/** Nas duas direções o byte 0 de `report` é o report ID, como no node-hid. */
+/** In both directions byte 0 of `report` is the report ID, as in node-hid. */
 export interface HidTransport {
   write(report: Uint8Array): Promise<void>;
   onReport(listener: (report: Uint8Array) => void): () => void;

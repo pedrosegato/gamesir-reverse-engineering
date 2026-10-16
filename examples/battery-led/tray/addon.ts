@@ -5,8 +5,8 @@ import { getAsset } from "node:sea";
 import { DATA_DIR } from "./data-dir.js";
 
 /**
- * Módulos nativos não carregam de dentro do executável: o `.node` embutido como asset do SEA é extraído
- * uma vez para uma pasta com o hash do conteúdo e carregado de lá.
+ * Native modules cannot load from inside the executable: the `.node` embedded as a SEA asset is extracted
+ * once to a folder named after its content hash and loaded from there.
  */
 export function loadAddon(name: string): unknown {
   const bytes = new Uint8Array(getAsset(name));

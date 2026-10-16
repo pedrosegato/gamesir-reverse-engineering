@@ -5,9 +5,9 @@ const QUICK_UPDATE_MAGIC = [0x55, 0x88];
 
 export function packet(cmd: number, ...args: number[]): Uint8Array {
   const body = [OUTPUT_REPORT_ID, cmd, ...args];
-  if (body.length > PACKET_SIZE) throw new RangeError(`pacote com ${body.length} bytes (máximo ${PACKET_SIZE})`);
+  if (body.length > PACKET_SIZE) throw new RangeError(`packet has ${body.length} bytes (max ${PACKET_SIZE})`);
   for (const b of body) {
-    if (!Number.isInteger(b) || b < 0 || b > 0xff) throw new RangeError(`byte fora do intervalo: ${b}`);
+    if (!Number.isInteger(b) || b < 0 || b > 0xff) throw new RangeError(`byte out of range: ${b}`);
   }
   const out = new Uint8Array(PACKET_SIZE);
   out.set(body);
@@ -53,22 +53,22 @@ export function refreshProfile(profileNum: number, offset: number, length: numbe
 export const setLightStatus = (playing: boolean, frameIndex = 0) =>
   packet(Cmd.LightStatus, playing ? 1 : 0, frameIndex);
 
-/** No fio é idêntico a `setLightStatus(false, 0)`. */
+/** On the wire it is identical to `setLightStatus(false, 0)`. */
 export const readRgb = () => packet(Cmd.LightStatus);
 
 export const vibrate = (left: number, right: number) => packet(Cmd.Vibrate, ...VIBRATE_MAGIC, left, right);
 
 export const MacroRecordState = { Cancel: 0, Start: 1, Stop: 2 } as const;
 export type MacroRecordState = (typeof MacroRecordState)[keyof typeof MacroRecordState];
-/** `target` depende do modelo: índice do botão no Cyclone 2, código de tecla nos outros. */
+/** `target` depends on the model: button index on the Cyclone 2, key code on the others. */
 export const setMacroRecord = (target: number, state: MacroRecordState) => packet(Cmd.MacroRecord, target, state);
 
 export const setCalibrationState = (state: number) => packet(Cmd.Calibration, state);
 
-/** Entra em modo de atualização de firmware. */
+/** Enters firmware update mode. */
 export const quickUpdate = () => packet(Cmd.QuickUpdate, ...QUICK_UPDATE_MAGIC);
 
-/** Entra em modo DFU. */
+/** Enters DFU mode. */
 export const enterUpgradeMode = () => packet(Cmd.RequestUpgrade);
 
 export interface Response {
@@ -90,7 +90,7 @@ export interface ProfileChange {
   length: number;
 }
 
-/** Não confere o report ID da resposta (o firmware usa 0x10); só descarta o report de estado. */
+/** Does not check the response report ID (the firmware uses 0x10); only skips the state report. */
 export function parseResponse(data: ArrayLike<number>): Response | null {
   if (data.length < 2 || data[0] === STATE_REPORT_ID) return null;
   const raw = Uint8Array.from(data);
@@ -110,7 +110,7 @@ export function parseProfileChunk(raw: ArrayLike<number>): ProfileChunk {
 
 export interface FirmwareVersion {
   firmware: string;
-  /** Vazio no cabo. */
+  /** Empty on cable. */
   dongle: string;
   raw: Uint8Array;
 }

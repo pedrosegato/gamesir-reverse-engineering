@@ -1,0 +1,26 @@
+{
+  "name": "gamesir-hid-examples",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "battery-led": "tsx battery-led/index.ts",
+    "battery-tray": "tsx battery-led/tray/main.ts",
+    "build:battery-tray": "tsx battery-led/tray/build.ts",
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "gamesir-hid": "*",
+    "koffi": "^3.3.3",
+    "node-hid": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.2",
+    "postject": "^1.0.0-alpha.6",
+    "resedit": "^3.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.0"
+  }
+}

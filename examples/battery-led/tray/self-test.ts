@@ -11,7 +11,7 @@ const WINDOW_NAME = "Cyclone2BatterySelfTest";
 const EXPECTED_SIZES = { MSG: 48, WNDCLASSEXW: 80, NOTIFYICONDATAW: 976 };
 const MENU_TIMEOUT_MS = 30_000;
 
-/** Simula o clique no ícone e escolhe o último item do menu com ↑ + Enter; Esc fecha o menu se nada for escolhido. */
+/** Clicks the icon and picks the last menu item with ↑ + Enter; Esc closes the menu if nothing was picked. */
 const CLICK_LAST_MENU_ITEM = `
 Add-Type -Namespace SelfTest -Name User32 -MemberDefinition @'
 [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowW(string cls, string name);
@@ -64,9 +64,9 @@ function chooseFromMenu(): Promise<MenuResult> {
       icon: toRgb("#808080"),
       menu: () => {
         opened++;
-        return [{ label: "status" }, "separator", { label: "último", onClick: () => finish(true) }];
+        return [{ label: "status" }, "separator", { label: "last", onClick: () => finish(true) }];
       },
-      onError: (message) => trayErrors.push(message),
+      onError: (operation, code) => trayErrors.push(`${operation} ${code}`),
     });
     tray.update("self-test 2", toRgb("#00ff00"));
     const child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", CLICK_LAST_MENU_ITEM], {
@@ -89,7 +89,7 @@ function autostartRoundTrip(): boolean {
   return on && off;
 }
 
-/** Verificação do executável no CI: carrega os módulos nativos e exercita a API do Windows, menu incluído. */
+/** CI check of the executable: loads the native modules and exercises the Windows API, menu included. */
 export async function selfTest(output: string): Promise<boolean> {
   const sizesMatch = Object.entries(EXPECTED_SIZES).every(
     ([name, size]) => STRUCT_SIZES[name as keyof typeof STRUCT_SIZES] === size,

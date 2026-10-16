@@ -9,7 +9,7 @@ export type ColorInput = Rgb | string | readonly [number, number, number];
 export function toRgb(c: ColorInput): Rgb {
   if (typeof c === "string") {
     const hex = c.replace(/^#/, "");
-    if (!/^[0-9a-fA-F]{6}$/.test(hex)) throw new Error(`cor inválida: ${c}`);
+    if (!/^[0-9a-fA-F]{6}$/.test(hex)) throw new Error(`invalid color: ${c}`);
     const n = parseInt(hex, 16);
     return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
   }

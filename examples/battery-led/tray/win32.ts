@@ -259,7 +259,7 @@ export const RegDeleteKeyValueW: (key: Pointer, subKey: string, valueName: strin
   "int32_t __stdcall RegDeleteKeyValueW(HKEY key, const char16_t *subKey, const char16_t *valueName)",
 );
 
-/** `(HKEY)(LONG)0x80000001`: o cast para LONG estende o sinal em 64 bits. */
+/** `(HKEY)(LONG)0x80000001`: the cast to LONG sign-extends on 64-bit. */
 export const HKEY_CURRENT_USER: Pointer = 0xffffffff80000001n;
 
 export const ERROR_SUCCESS = 0;
