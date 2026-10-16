@@ -10,6 +10,9 @@ export const CyclonePid = {
 
 export const CYCLONE2_PIDS: readonly number[] = Object.values(CyclonePid);
 
+/** Dongle plugado sem controle conectado a ele (visto com o controle no cabo). Não responde a comandos. */
+export const DONGLE_IDLE_PID = 0x0575;
+
 export const OUTPUT_REPORT_ID = 0x0f;
 /** Respostas chegam com 0x10; o app não confere, só exclui o 0x12. */
 export const RESPONSE_REPORT_ID = 0x10;

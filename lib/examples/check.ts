@@ -1,5 +1,5 @@
 import HID from "node-hid";
-import { Cyclone2, CyclonePid, type GamepadState, Profile, VENDOR_ID } from "../src/index.js";
+import { Cyclone2, CyclonePid, DONGLE_IDLE_PID, type GamepadState, Profile, VENDOR_ID } from "../src/index.js";
 import { findCyclone2, NodeHidTransport } from "../src/transport/node-hid.js";
 
 const MODES: Record<number, string> = {
@@ -33,6 +33,9 @@ async function statesPerSecond(pad: Cyclone2, ms = 2000): Promise<number> {
   off();
   return Math.round((count * 1000) / ms);
 }
+
+const idleDongle = (await HID.devicesAsync()).some((d) => d.vendorId === VENDOR_ID && d.productId === DONGLE_IDLE_PID);
+if (idleDongle) console.log("dongle plugado sem controle conectado a ele (PID 0x0575)");
 
 const found = await findCyclone2();
 if (found.length === 0) {

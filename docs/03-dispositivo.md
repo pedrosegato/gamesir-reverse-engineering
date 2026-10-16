@@ -18,7 +18,7 @@ VID `0x3537`.
 - `0x1053` tem linha de firmware própria (3.x). Significado de "ADC" e diferença `0x102A`/`0x100B`: desconhecidos.
 - `0x100B`: PID usado pelos scripts de teste com o dongle.
 - Modelo `GS_C2_Dongle` não tem PID: só aparece no fluxo de gravação via pendrive.
-- `0x0575` (VID `0x3537`): apareceu no teste com cabo; não está na tabela do app. Coleções `0x000C/0x0001`, `0xFF32/0x0074` e `0xFFF0/0x0040`; não respondeu a comandos; report `0x12` zerado com último byte `0xCC`. Provável: dongle sem controle conectado (a confirmar).
+- `0x0575` = **dongle sem controle conectado a ele** (visto com o dongle plugado e o controle no cabo; lib: `DONGLE_IDLE_PID`). Não está na tabela do app. Coleções `0x000C/0x0001`, `0xFF32/0x0074` e `0xFFF0/0x0040`; não responde a comandos; report `0x12` zerado com último byte `0xCC`. Com o controle desligado: não testado.
 
 ## Interface
 
