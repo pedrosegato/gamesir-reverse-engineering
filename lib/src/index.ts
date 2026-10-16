@@ -1,7 +1,10 @@
 export * from "./color.js";
 export * from "./constants.js";
 export * from "./cyclone2.js";
+export * from "./game-profile.js";
+export * from "./keycodes.js";
 export * from "./lighting.js";
+export * from "./presets.js";
 export * as protocol from "./protocol.js";
 export * from "./state.js";
 export type { DeviceInfo, HidTransport } from "./transport/types.js";

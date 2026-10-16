@@ -73,7 +73,9 @@ export const readRgb = () => packet(Cmd.LightStatus);
 export const vibrate = (left: number, right: number) => packet(Cmd.Vibrate, ...VIBRATE_MAGIC, left, right);
 
 export const MacroKey = { FL1: 1, FR1: 2 } as const;
-export const setMacroRecord = (button: keyof typeof MacroKey, state: number) =>
+export const MacroRecordState = { Cancel: 0, Start: 1, Stop: 2 } as const;
+export type MacroRecordState = (typeof MacroRecordState)[keyof typeof MacroRecordState];
+export const setMacroRecord = (button: keyof typeof MacroKey, state: MacroRecordState) =>
   packet(Cmd.MacroRecord, MacroKey[button], state);
 
 export const setCalibrationState = (state: number) => packet(Cmd.Calibration, state);
@@ -117,6 +119,27 @@ export function parseProfileChunk(raw: ArrayLike<number>): ProfileChunk {
     offset: (bytes[3] << 8) | bytes[4],
     data: bytes.slice(6, 6 + bytes[5]),
   };
+}
+
+export interface FirmwareVersion {
+  firmware: string;
+  /** Vazio no cabo. */
+  dongle: string;
+  raw: Uint8Array;
+}
+
+/** Cada caractere ASCII vira um componente: "123" → "1.2.3". */
+function versionAt(raw: Uint8Array, start: number): string {
+  const text = new TextDecoder().decode(raw.slice(start, start + 5));
+  return text
+    .replace(/[\s\0]/g, "")
+    .split("")
+    .join(".");
+}
+
+export function parseFirmwareVersion(raw: ArrayLike<number>): FirmwareVersion {
+  const bytes = Uint8Array.from(raw);
+  return { firmware: versionAt(bytes, 4), dongle: versionAt(bytes, 12), raw: bytes };
 }
 
 export function parseProfileChange(raw: ArrayLike<number>): ProfileChange {

@@ -1,5 +1,17 @@
-import { Cmd, LIGHT_PROFILE_SIZE, Profile, STATE_REPORT_ID } from "./constants.js";
-import { decodeLightProfile, diffRange, encodeLightProfile, type LightProfile } from "./lighting.js";
+import type { ColorInput } from "./color.js";
+import { Cmd, Profile, STATE_REPORT_ID } from "./constants.js";
+import { decodeGameProfile, encodeGameProfile, type GameProfile, type MappedButton } from "./game-profile.js";
+import {
+  type Animation,
+  animation,
+  decodeLightProfile,
+  diffRange,
+  encodeLightProfile,
+  type FrameInput,
+  type LightProfile,
+  solidFrame,
+} from "./lighting.js";
+import { applyPreset, type PresetName } from "./presets.js";
 import * as P from "./protocol.js";
 import { type GamepadState, isStateReport, parseState } from "./state.js";
 import type { HidTransport } from "./transport/types.js";
@@ -17,6 +29,8 @@ export interface RequestOptions {
   match?: Matcher;
 }
 
+export type GameProfileNumber = 1 | 2 | 3 | 4 | 5;
+
 const NOTIFICATIONS = new Set<number>([Cmd.ReadRgbAck, Cmd.ProfileChanged]);
 
 const defaultMatch: Matcher = (raw) => !NOTIFICATIONS.has(raw[1]) && !P.isBusyAck(raw);
@@ -31,7 +45,8 @@ export class Cyclone2 {
   private changeListeners = new Set<(c: P.ProfileChange) => void>();
   private rawListeners = new Set<(raw: Uint8Array) => void>();
   private unsubscribe: () => void;
-  private lightCache: Uint8Array | null = null;
+  /** Última imagem conhecida de cada perfil, base para escrever só o diff. */
+  private profileCache = new Map<number, Uint8Array>();
   lastState: GamepadState | null = null;
 
   constructor(private readonly transport: HidTransport) {
@@ -62,7 +77,7 @@ export class Cyclone2 {
     return () => this.stateListeners.delete(listener);
   }
 
-  /** Disparado quando o perfil muda pelo próprio controle (ex.: atalho de LED). */
+  /** Disparado quando o perfil muda pelo próprio controle (ex.: M + analógico troca a animação). */
   onProfileChanged(listener: (c: P.ProfileChange) => void): () => void {
     this.changeListeners.add(listener);
     return () => this.changeListeners.delete(listener);
@@ -75,12 +90,12 @@ export class Cyclone2 {
 
   nextState(timeoutMs = 3000): Promise<GamepadState> {
     return new Promise((resolve, reject) => {
-      const t = setTimeout(() => {
+      const timer = setTimeout(() => {
         off();
         reject(new Error("nenhum report de estado recebido; chamou start()?"));
       }, timeoutMs);
       const off = this.onState((s) => {
-        clearTimeout(t);
+        clearTimeout(timer);
         off();
         resolve(s);
       });
@@ -100,7 +115,7 @@ export class Cyclone2 {
     if (!resp) return;
     if (resp.cmd === Cmd.ProfileChanged) {
       const change = P.parseProfileChange(raw);
-      if (change.profileNum === Profile.Light) this.lightCache = null;
+      this.profileCache.delete(change.profileNum);
       for (const l of this.changeListeners) l(change);
       return;
     }
@@ -126,7 +141,9 @@ export class Cyclone2 {
   private async doRequest(packet: Uint8Array, opts: RequestOptions): Promise<Uint8Array> {
     const { timeoutMs = 200, maxSends = 10, match = defaultMatch } = opts;
     let resolveFn!: (raw: Uint8Array) => void;
-    const answered = new Promise<Uint8Array>((r) => (resolveFn = r));
+    const answered = new Promise<Uint8Array>((r) => {
+      resolveFn = r;
+    });
     this.pending = { match, resolve: resolveFn };
     try {
       for (let sent = 0; sent < maxSends; sent++) {
@@ -140,10 +157,12 @@ export class Cyclone2 {
     }
   }
 
-  async readFirmwareVersionRaw(): Promise<Uint8Array> {
-    return this.request(P.readFwVersion(), { match: (r) => r[1] === Cmd.ReadFwVersionAck });
+  async readFirmwareVersion(): Promise<P.FirmwareVersion> {
+    const raw = await this.request(P.readFwVersion(), { match: (r) => r[1] === Cmd.ReadFwVersionAck });
+    return P.parseFirmwareVersion(raw);
   }
 
+  /** 1..4, ou 5 quando a camada Shift está ativa. */
   async readCurrentProfile(): Promise<number> {
     const raw = await this.request(P.readCurrentProfile(), { match: (r) => r[1] === Cmd.ReadCurrentProfileAck });
     return raw[2];
@@ -163,38 +182,134 @@ export class Cyclone2 {
       const chunk = P.parseProfileChunk(raw);
       out.set(chunk.data, chunk.offset);
     }
+    this.profileCache.set(profileNum, out.slice());
     return out;
   }
 
   async writeProfile(profileNum: number, data: ArrayLike<number>, offset = 0): Promise<void> {
     for (const pkt of P.writeProfile(profileNum, data, offset)) await this.request(pkt);
+    const cached = this.profileCache.get(profileNum);
+    if (cached) cached.set(Array.from(data), offset);
+  }
+
+  /** Grava a imagem inteira do perfil escrevendo só o trecho que mudou, como o app. */
+  async writeProfileImage(profileNum: number, image: Uint8Array): Promise<void> {
+    const previous = this.profileCache.get(profileNum) ?? (await this.readProfile(profileNum));
+    const range = diffRange(previous, image);
+    if (range) await this.writeProfile(profileNum, image.slice(range.start, range.end + 1), range.start);
+    this.profileCache.set(profileNum, image.slice());
+  }
+
+  async readGameProfile(profileNum: GameProfileNumber): Promise<GameProfile> {
+    return decodeGameProfile(await this.readProfile(profileNum));
+  }
+
+  async writeGameProfile(profileNum: GameProfileNumber, profile: GameProfile): Promise<void> {
+    await this.writeProfileImage(profileNum, encodeGameProfile(profile));
+  }
+
+  async updateGameProfile(
+    profileNum: GameProfileNumber,
+    change: (p: GameProfile) => GameProfile | undefined,
+  ): Promise<GameProfile> {
+    const current = await this.readGameProfile(profileNum);
+    const next = change(current) ?? current;
+    await this.writeGameProfile(profileNum, next);
+    return next;
+  }
+
+  async remapButton(profileNum: GameProfileNumber, button: MappedButton, ...keys: number[]): Promise<void> {
+    if (keys.length > 3) throw new RangeError("no máximo 3 teclas por botão");
+    await this.updateGameProfile(profileNum, (p) => {
+      const mapTo = [keys[0] ?? 0, keys[1] ?? 0, keys[2] ?? 0] as [number, number, number];
+      p.buttons[button] = { ...p.buttons[button], mapEnabled: keys.length > 0, mapTo };
+      return p;
+    });
+  }
+
+  async setReportRate(profileNum: GameProfileNumber, rate: number): Promise<void> {
+    await this.updateGameProfile(profileNum, (p) => {
+      p.fun.reportRate = rate;
+      return p;
+    });
   }
 
   async readLightProfile(): Promise<LightProfile> {
-    const bytes = await this.readProfile(Profile.Light);
-    this.lightCache = bytes;
-    return decodeLightProfile(bytes);
+    return decodeLightProfile(await this.readProfile(Profile.Light));
   }
 
-  /** Escreve só o trecho que mudou desde a última leitura/escrita, como o app. */
   async writeLightProfile(profile: LightProfile): Promise<void> {
-    const next = encodeLightProfile(profile);
-    if (next.length !== LIGHT_PROFILE_SIZE) throw new Error("perfil de luz com tamanho errado");
-    const prev = this.lightCache ?? (await this.readProfile(Profile.Light));
-    const range = diffRange(prev, next);
-    if (range) await this.writeProfile(Profile.Light, next.slice(range.start, range.end + 1), range.start);
-    this.lightCache = next;
+    await this.writeProfileImage(Profile.Light, encodeLightProfile(profile));
   }
 
-  async updateLightProfile(fn: (p: LightProfile) => undefined | LightProfile): Promise<LightProfile> {
-    const p = await this.readLightProfile();
-    const next = fn(p) ?? p;
+  async updateLightProfile(change: (p: LightProfile) => LightProfile | undefined): Promise<LightProfile> {
+    const current = await this.readLightProfile();
+    const next = change(current) ?? current;
     await this.writeLightProfile(next);
     return next;
   }
 
-  async setLightStatus(playing: boolean, frameIndex = 0): Promise<void> {
-    await this.send(P.setLightStatus(playing, frameIndex));
+  /** Mesma troca que M + analógico esquerdo faz no controle. */
+  async setActiveAnimation(index: number): Promise<void> {
+    await this.updateLightProfile((p) => {
+      p.activeAnimation = index;
+      return p;
+    });
+  }
+
+  async setAnimation(anim: Animation, { slot, activate = true }: { slot?: number; activate?: boolean } = {}) {
+    return this.updateLightProfile((p) => {
+      const target = slot ?? p.activeAnimation;
+      p.animations[target] = anim;
+      if (activate) p.activeAnimation = target;
+      return p;
+    });
+  }
+
+  async applyPreset(name: PresetName, slot?: number): Promise<LightProfile> {
+    return this.updateLightProfile((p) => {
+      const target = slot ?? p.activeAnimation;
+      p.animations[target] = applyPreset(p.animations[target], name);
+      p.activeAnimation = target;
+      return p;
+    });
+  }
+
+  /** Cor fixa: uma cor para todas as zonas, ou uma por zona. */
+  async setStaticColor(color: ColorInput | FrameInput, opts: { slot?: number; brightness?: number } = {}) {
+    const isPerZone = typeof color === "object" && !Array.isArray(color) && !("r" in color);
+    const frame = isPerZone ? (color as FrameInput) : solidFrame(color as ColorInput);
+    return this.setAnimation(animation([frame], { brightness: opts.brightness }), { slot: opts.slot });
+  }
+
+  async setStandbyTime(minutes: number): Promise<void> {
+    await this.updateLightProfile((p) => {
+      p.standbyTime = minutes;
+      return p;
+    });
+  }
+
+  async setRaiseToWake(enabled: boolean): Promise<void> {
+    await this.updateLightProfile((p) => {
+      p.raiseWakeUp = enabled;
+      return p;
+    });
+  }
+
+  async setAudioReactive(enabled: boolean): Promise<void> {
+    await this.updateLightProfile((p) => {
+      p.audioReactiveMode = enabled;
+      return p;
+    });
+  }
+
+  async playLights(): Promise<void> {
+    await this.send(P.setLightStatus(true, 1));
+  }
+
+  /** Pausa a animação mostrando o frame `frameIndex` (0..7) da animação ativa. */
+  async showFrame(frameIndex: number): Promise<void> {
+    await this.send(P.setLightStatus(false, frameIndex + 1));
   }
 
   async vibrate(left: number, right: number, durationMs = 1000): Promise<void> {
@@ -205,7 +320,7 @@ export class Cyclone2 {
     }
   }
 
-  async setMacroRecord(button: "FL1" | "FR1", state: number): Promise<void> {
+  async setMacroRecording(button: keyof typeof P.MacroKey, state: P.MacroRecordState): Promise<void> {
     await this.send(P.setMacroRecord(button, state));
   }
 }

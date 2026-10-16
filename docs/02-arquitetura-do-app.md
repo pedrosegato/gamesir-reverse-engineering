@@ -37,11 +37,12 @@ Também tem um `Proxy`, que é a classe que implementa o protocolo daquele model
 | `reqBackToLastProfile` | `[0F 07 último]` |
 | `reqSetKeyProfile`, `resetProfile`, `reqSetProfileByProperty` | Alteram o perfil e chamam `saveProfile` |
 | `reqSetLightStatus {isPlaying, frameIndex}` | `[0F 0D playing frame]` |
-| `reqGetRgbState` | `[0F 0D]` |
+| `reqGetRgbState` | `[0F 0D]`. Nada na interface 1.16.7 dispara esse evento |
 | `vibrate {left, right, duration}` | `[0F 20 66 55 L R]`, depois `[0F 20 66 55 00 00]` ao fim de `duration` (padrão 1 s) |
 | `reqSetMacroRecordStatus {key, recordState}` | `[0F 16 key state]` |
 | `reqQuickUpdate` | `[0F 17 55 88]` |
 | `heartBeat` | `[0F F2 00]` num handle temporário |
+| `reqToCalibrate` | **sem listener no proxy C2**: a tela de calibração não faz nada neste controle |
 | `reqDfu` | Atualização de firmware pela DLL (ver abaixo) |
 
 ### O que ele escuta do controle

@@ -5,9 +5,14 @@ import { openFirstCyclone2 } from "./_open.js";
 const pad = await openFirstCyclone2();
 const hex = (b: Uint8Array) => Buffer.from(b).toString("hex");
 
-const firmware = await pad.readFirmwareVersionRaw();
+const firmware = await pad.readFirmwareVersion();
 const current = await pad.readCurrentProfile();
-const dump: Record<string, string | number> = { firmware: hex(firmware), currentProfile: current };
+const dump: Record<string, string | number> = {
+  firmware: firmware.firmware,
+  dongle: firmware.dongle,
+  firmwareRaw: hex(firmware.raw),
+  currentProfile: current,
+};
 for (const [name, num] of Object.entries(Profile)) {
   if (num === Profile.Current) continue;
   dump[name] = hex(await pad.readProfile(num));

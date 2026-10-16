@@ -26,7 +26,7 @@ export type Hat = "Up" | "UpRight" | "Right" | "DownRight" | "Down" | "DownLeft"
 
 const HAT_DIRECTIONS: readonly Hat[] = ["Up", "UpRight", "Right", "DownRight", "Down", "DownLeft", "Left", "UpLeft"];
 
-export interface Stick {
+export interface StickPosition {
   x: number;
   y: number;
 }
@@ -52,8 +52,8 @@ export interface Buttons {
 }
 
 export interface GamepadState {
-  leftStick: Stick;
-  rightStick: Stick;
+  leftStick: StickPosition;
+  rightStick: StickPosition;
   hat: Hat;
   buttons: Buttons;
   leftTrigger: number;
