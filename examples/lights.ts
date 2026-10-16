@@ -1,8 +1,11 @@
-import { PRESETS, type PresetName } from "../src/index.js";
-import { openFirstCyclone2 } from "./_open.js";
+import { Cyclone2, PRESETS, type PresetName } from "gamesir-hid";
+import { findControllers, NodeHidTransport } from "gamesir-hid/node";
 
 const [command = "static", arg = "#00aaff"] = process.argv.slice(2);
-const pad = await openFirstCyclone2();
+const [device] = await findControllers();
+if (!device) throw new Error("nenhum controle encontrado");
+const pad = new Cyclone2(await NodeHidTransport.open(device.path));
+await pad.start();
 
 switch (command) {
   case "static":

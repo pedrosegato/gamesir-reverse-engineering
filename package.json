@@ -1,0 +1,25 @@
+{
+  "name": "gamesir-reverse-engineering",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "lib"
+  ],
+  "scripts": {
+    "battery-led": "tsx examples/battery-led/index.ts",
+    "typecheck": "tsc -p tsconfig.json && npm run typecheck -w lib",
+    "lint": "biome check",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm test"
+  },
+  "dependencies": {
+    "node-hid": "^3.1.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.0"
+  }
+}

@@ -1,6 +1,6 @@
 # gamesir-hid
 
-Control GameSir controllers over HID from Node.js or the browser, without the GameSir Connect app. Supports the **Cyclone 2** (wired and 2.4 GHz dongle): lights, game profiles, macros, vibration and live state.
+Control GameSir controllers over HID from Node.js, without the GameSir Connect app. Supports the **Cyclone 2** (wired and 2.4 GHz dongle): lights, game profiles, macros, vibration and live state.
 
 ```bash
 npm install gamesir-hid node-hid   # node-hid is only needed on Node
@@ -19,10 +19,8 @@ await pad.remapButton(1, "A", KeyCode.B);
 pad.onState((s) => console.log(s.batteryLevel, s.buttons.A, s.imu.accel));
 ```
 
-In the browser, use `requestController()` from `gamesir-hid/webhid` inside a click handler and pass `found.transport` to `new Cyclone2(...)`.
-
 - [API reference](https://github.com/pedrosegato/gamesir-reverse-engineering/blob/main/docs/api.md) (Portuguese)
 - [HID protocol](https://github.com/pedrosegato/gamesir-reverse-engineering/blob/main/docs/protocolo.md) (Portuguese)
-- [Examples](https://github.com/pedrosegato/gamesir-reverse-engineering/tree/main/lib/examples)
+- [Examples](https://github.com/pedrosegato/gamesir-reverse-engineering/tree/main/examples)
 
 MIT. Not affiliated with or endorsed by GameSir.

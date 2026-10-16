@@ -1,11 +1,4 @@
-import {
-  type GameProfile,
-  type GameProfileNumber,
-  KeyCode,
-  type MacroStep,
-  protocol,
-  ReportRate,
-} from "../src/index.js";
+import { type GameProfile, type GameProfileNumber, KeyCode, type MacroStep, protocol, ReportRate } from "gamesir-hid";
 import { describeBackButton, pressed } from "./_format.js";
 import { openFirstCyclone2 } from "./_open.js";
 

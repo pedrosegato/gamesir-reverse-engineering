@@ -1,4 +1,4 @@
-import type { Vec3 } from "../src/index.js";
+import type { Vec3 } from "gamesir-hid";
 import { openFirstCyclone2 } from "./_open.js";
 
 const INTERVAL_MS = 100;

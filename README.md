@@ -1,6 +1,6 @@
 # gamesir-hid
 
-Control GameSir controllers over HID from Node.js or the browser, without the GameSir Connect app. The protocol was reverse-engineered from GameSir Connect 1.16.7 and verified on a Cyclone 2.
+Control GameSir controllers over HID from Node.js, without the GameSir Connect app. The protocol was reverse-engineered from GameSir Connect 1.16.7 and verified on a Cyclone 2.
 
 | Controller | Support |
 |---|---|
@@ -16,7 +16,7 @@ Wired and 2.4 GHz dongle connections. Bluetooth is not supported.
 npm install gamesir-hid node-hid   # node-hid is only needed on Node
 ```
 
-Node 18+, or Chrome/Edge (WebHID). On Linux, grant access to `hidraw` (udev rule for vendor `3537`).
+Node 18+. On Linux, grant access to `hidraw` (udev rule for vendor `3537`).
 
 ## Usage
 
@@ -41,21 +41,6 @@ pad.onState((s) => console.log(s.batteryLevel, s.buttons.A, s.leftStick, s.imu.a
 pad.onDisconnect(() => console.log("controller gone"));
 ```
 
-Browser:
-
-```ts
-import { Cyclone2 } from "gamesir-hid";
-import { requestController } from "gamesir-hid/webhid";
-
-button.onclick = async () => {
-  const found = await requestController();
-  if (!found) return;
-  const pad = new Cyclone2(found.transport);
-  await pad.start();
-  await pad.setStaticColor("#ff00aa");
-};
-```
-
 | Area | Methods |
 |---|---|
 | Session | `start`, `close`, `onState`, `onProfileChanged`, `onDisconnect` |
@@ -68,14 +53,7 @@ Writes take effect immediately and only send the bytes that changed.
 
 ## Examples
 
-From `lib/` after `npm install`:
-
-```bash
-npx tsx examples/check.ts                 # connection, firmware, battery, profiles, vibration, LED
-npx tsx examples/monitor.ts               # live state
-npx tsx examples/lights.ts preset Rainbow
-npx tsx examples/battery-led/index.ts     # battery level on the Home LED, reconnects on its own
-```
+[`examples/`](examples) has a few usage examples. The main one is [`battery-led`](examples/battery-led), which shows the battery level on the Home LED: `npm install`, then `npm run battery-led`.
 
 ## Docs
 
@@ -86,15 +64,6 @@ Written in Portuguese.
 | [docs/api.md](docs/api.md) | API reference |
 | [docs/protocolo.md](docs/protocolo.md) | HID protocol: packets, commands, state report, profile layouts |
 | [docs/engenharia-reversa.md](docs/engenharia-reversa.md) | how the protocol was extracted from the app and verified on the device |
-
-## Development
-
-```bash
-cd lib
-npm install
-npm run check   # typecheck, Biome, tests
-npm run build
-```
 
 ## License
 

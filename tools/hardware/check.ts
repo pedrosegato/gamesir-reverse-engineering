@@ -1,6 +1,6 @@
+import { Cyclone2, Cyclone2Pid, type Cyclone2State, DONGLE_IDLE_PID, Profile, VENDOR_ID } from "gamesir-hid";
+import { findControllers, NodeHidTransport } from "gamesir-hid/node";
 import HID from "node-hid";
-import { Cyclone2, Cyclone2Pid, type Cyclone2State, DONGLE_IDLE_PID, Profile, VENDOR_ID } from "../src/index.js";
-import { findControllers, NodeHidTransport } from "../src/transport/node-hid.js";
 
 const MODES: Record<number, string> = {
   [Cyclone2Pid.Wired]: "cabo",

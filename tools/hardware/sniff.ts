@@ -1,4 +1,3 @@
-import HID from "node-hid";
 import {
   CONFIG_USAGE_PAGE,
   DONGLE_IDLE_PID,
@@ -10,7 +9,8 @@ import {
   Profile,
   STATE_REPORT_ID,
   VENDOR_ID,
-} from "../src/index.js";
+} from "gamesir-hid";
+import HID from "node-hid";
 
 const hex = (b: ArrayLike<number>, n = 24) =>
   Array.from(b)

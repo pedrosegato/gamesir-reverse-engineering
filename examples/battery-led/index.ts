@@ -8,8 +8,8 @@ import {
   LED_ZONES,
   type LedZone,
   USER_ANIMATION_COUNT,
-} from "../../src/index.js";
-import { findControllers, NodeHidTransport } from "../../src/transport/node-hid.js";
+} from "gamesir-hid";
+import { findControllers, NodeHidTransport } from "gamesir-hid/node";
 import { indicatorsFor } from "./indicators.js";
 import { type BatteryStatus, classify, type IndicatorKey, indicatorKey } from "./status.js";
 

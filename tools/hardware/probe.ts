@@ -1,4 +1,4 @@
-import { Cmd, type GameProfile, type GameProfileNumber, Profile, protocol, STATE_REPORT_ID } from "../src/index.js";
+import { Cmd, type GameProfile, type GameProfileNumber, Profile, protocol, STATE_REPORT_ID } from "gamesir-hid";
 import { describeBackButton } from "./_format.js";
 import { openFirstCyclone2 } from "./_open.js";
 

@@ -1,4 +1,4 @@
-import { type BackButton, type Buttons, keyName, type MacroStep } from "../src/index.js";
+import { type BackButton, type Buttons, keyName, type MacroStep } from "gamesir-hid";
 
 export const pressed = (b: Buttons) =>
   Object.entries(b)

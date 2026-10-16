@@ -1,6 +1,6 @@
 # API da lib `gamesir-hid`
 
-TypeScript, para Node (`node-hid`) e navegador (WebHID). A lib tem duas camadas:
+TypeScript para Node, sobre o `node-hid`. A lib tem duas camadas:
 
 | Camada | Conteúdo |
 |---|---|
@@ -13,7 +13,7 @@ TypeScript, para Node (`node-hid`) e navegador (WebHID). A lib tem duas camadas:
 npm install gamesir-hid node-hid   # node-hid só no Node
 ```
 
-- Node 18 ou superior. No navegador, Chrome ou Edge (WebHID).
+- Node 18 ou superior.
 - Linux: dar acesso ao `hidraw`, por exemplo com a regra udev `KERNEL=="hidraw*", ATTRS{idVendor}=="3537", MODE="0666"`.
 
 ## Conexão
@@ -27,25 +27,11 @@ const pad = new Cyclone2(await NodeHidTransport.open(device.path));
 await pad.start();
 ```
 
-```ts
-import { Cyclone2 } from "gamesir-hid";
-import { requestController } from "gamesir-hid/webhid";
-
-button.onclick = async () => {
-  const found = await requestController();
-  if (!found) return;
-  const pad = new Cyclone2(found.transport);
-  await pad.start();
-};
-```
-
 | Função | Retorno |
 |---|---|
 | `findControllers(models = MODELS)` | coleções `0xFFF0` dos modelos conhecidos: `{ path, productId, product, model, … }[]` |
 | `NodeHidTransport.open(path)` | transporte `node-hid` |
-| `requestController(models = MODELS)` | abre o seletor do navegador; `{ transport, model } \| null`. Precisa de um gesto do usuário |
-| `getAuthorizedControllers(models = MODELS)` | dispositivos já autorizados no navegador |
-| `WebHidTransport.open(device)` | transporte WebHID a partir de um `HIDDevice` |
+| `gamesir-hid/webhid` | `requestController`, `getAuthorizedControllers`, `WebHidTransport`: o mesmo, via WebHID (não testado) |
 
 ## `GameSirController`
 
@@ -185,15 +171,12 @@ Um modelo novo do mesmo protocolo precisa de um `ControllerModel` (PIDs, tamanho
 
 ## Exemplos
 
-Em `lib/examples/`, rodados com `npx tsx`:
+Em `examples/`, rodados da raiz do repositório depois de `npm install`:
 
-| Arquivo | Faz |
+| Comando | Faz |
 |---|---|
-| `check.ts` | diagnóstico: conexão, firmware, ritmo do estado, bateria, perfis, vibração, LED |
-| `monitor.ts` · `imu.ts` | estado ao vivo · giroscópio e acelerômetro |
-| `lights.ts static\|home\|preset\|slot\|show` | luz |
-| `vibrate.ts` | vibração |
-| `game-profile.ts rate\|remap\|macro\|modes\|record` | perfil de jogo e macros, restaurando o perfil no fim |
-| `battery-led/index.ts [--slot 1-4] [--zone Home]` | indicador de bateria num LED, com reconexão automática |
-| `dump-profiles.ts` | salva todos os perfis em JSON |
-| `sniff.ts` · `probe.ts` | coleções HID e respostas cruas · testes de comandos pouco usados |
+| `npm run battery-led -- [--slot 1-4] [--zone Home]` | indicador de bateria num LED, com reconexão automática |
+| `npx tsx examples/lights.ts static\|home\|preset\|slot\|show` | luz |
+| `npx tsx examples/vibrate.ts` | vibração |
+
+Os scripts usados na validação do protocolo ficam em `tools/hardware/` ([engenharia-reversa.md](engenharia-reversa.md#verificação-no-hardware)).

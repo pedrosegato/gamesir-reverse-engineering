@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "gamesir-hid": ["./lib/src/index.ts"],
+      "gamesir-hid/node": ["./lib/src/transport/node-hid.ts"]
+    }
+  },
+  "include": ["examples", "tools/hardware"]
+}

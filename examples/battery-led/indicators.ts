@@ -1,4 +1,4 @@
-import { type Animation, animation, type ColorInput, type FrameInput, type LedZone } from "../../src/index.js";
+import { type Animation, animation, type ColorInput, type FrameInput, type LedZone } from "gamesir-hid";
 import type { IndicatorKey } from "./status.js";
 
 export interface Indicator {

@@ -1,4 +1,4 @@
-import type { Cyclone2State } from "../src/index.js";
+import type { Cyclone2State } from "gamesir-hid";
 import { openFirstCyclone2 } from "./_open.js";
 
 const pad = await openFirstCyclone2();

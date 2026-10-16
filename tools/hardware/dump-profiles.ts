@@ -1,5 +1,5 @@
 import { writeFile } from "node:fs/promises";
-import { Profile } from "../src/index.js";
+import { Profile } from "gamesir-hid";
 import { openFirstCyclone2 } from "./_open.js";
 
 const pad = await openFirstCyclone2();

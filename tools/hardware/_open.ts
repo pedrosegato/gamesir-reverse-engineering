@@ -1,5 +1,5 @@
-import { Cyclone2 } from "../src/index.js";
-import { findControllers, NodeHidTransport } from "../src/transport/node-hid.js";
+import { Cyclone2 } from "gamesir-hid";
+import { findControllers, NodeHidTransport } from "gamesir-hid/node";
 
 export async function openFirstCyclone2(): Promise<Cyclone2> {
   const [info] = await findControllers();

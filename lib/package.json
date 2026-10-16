@@ -45,8 +45,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run lint && npm test",
-    "example": "tsx"
+    "check": "npm run typecheck && npm run lint && npm test"
   },
   "peerDependencies": {
     "node-hid": "^3.1.0"
