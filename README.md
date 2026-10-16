@@ -1,85 +1,101 @@
-# gamesir-reverse-engineering
+# gamesir-hid
 
-Protocolo HID do **GameSir Cyclone 2**, extraído do GameSir Connect 1.16.7, e uma lib TypeScript para controlar o controle sem o app.
+Control GameSir controllers over HID from Node.js or the browser, without the GameSir Connect app. The protocol was reverse-engineered from GameSir Connect 1.16.7 and verified on a Cyclone 2.
 
-## Uso
+| Controller | Support |
+|---|---|
+| Cyclone 2 | lights, game profiles (remapping, macros, triggers, sticks, gyro), vibration, live state (buttons, sticks, battery, LEDs, IMU) |
+| Tarantula CE, G7 Pro 8K, K2 8K | same protocol family; not implemented (no model descriptors or profile codecs yet) |
+| Tarantula Pro, Super Nova, Nova 2 Lite | not supported (the app drives them through closed DLLs) |
+
+Wired and 2.4 GHz dongle connections. Bluetooth is not supported.
+
+## Install
 
 ```bash
-cd lib && npm install
-npx tsx examples/monitor.ts                 # estado ao vivo
-npx tsx examples/lights.ts home "#ff0000"   # Home vermelho
-npx tsx examples/lights.ts preset Rainbow
-npx tsx examples/vibrate.ts
+npm install gamesir-hid node-hid   # node-hid is only needed on Node
 ```
+
+Node 18+, or Chrome/Edge (WebHID). On Linux, grant access to `hidraw` (udev rule for vendor `3537`).
+
+## Usage
+
+```ts
+import { Cyclone2, KeyCode } from "gamesir-hid";
+import { findControllers, NodeHidTransport } from "gamesir-hid/node";
+
+const [device] = await findControllers();
+const pad = new Cyclone2(await NodeHidTransport.open(device.path));
+await pad.start();
+
+await pad.setStaticColor({ Home: "#00aaff" });
+await pad.applyPreset("Rainbow", 1);
+await pad.remapButton(1, "A", KeyCode.B);
+await pad.setMacro(1, "L4", [
+  { key: KeyCode.A, holdMs: 50, delayMs: 100 },
+  { key: KeyCode.B, holdMs: 50, delayMs: 0 },
+]);
+await pad.vibrate(200, 200, 300);
+
+pad.onState((s) => console.log(s.batteryLevel, s.buttons.A, s.leftStick, s.imu.accel));
+pad.onDisconnect(() => console.log("controller gone"));
+```
+
+Browser:
 
 ```ts
 import { Cyclone2 } from "gamesir-hid";
-import { findCyclone2, NodeHidTransport } from "gamesir-hid/node";
+import { requestController } from "gamesir-hid/webhid";
 
-const [info] = await findCyclone2();
-const pad = new Cyclone2(await NodeHidTransport.open(info.path!));
-await pad.start();
-await pad.setStaticColor("#00aaff");
+button.onclick = async () => {
+  const found = await requestController();
+  if (!found) return;
+  const pad = new Cyclone2(found.transport);
+  await pad.start();
+  await pad.setStaticColor("#ff00aa");
+};
 ```
 
-API completa: [docs/08-lib.md](docs/08-lib.md).
-
-## Protocolo
-
-| | |
+| Area | Methods |
 |---|---|
-| Interface | VID `0x3537`, usage page `0xFFF0` |
-| PIDs | `0x101D`, `0x1053` (cabo) · `0x100B`, `0x102A` (dongle) |
-| Pacote | 64 bytes: `0F <cmd> <args>` → resposta `10 <cmd> …` |
-| Estado | report `0x12` enquanto houver heartbeat `0F F2 00` a cada 1 s |
-| Perfis | 1–4 e Shift: 680 B · luz (32): 635 B · lidos/escritos em blocos de 58 B |
-| Vibração | `0F 20 66 55 L R` |
-| Bluetooth | não suportado pelo app |
+| Session | `start`, `close`, `onState`, `onProfileChanged`, `onDisconnect` |
+| Device | `readFirmwareVersion`, `readCurrentProfile`, `switchProfile`, `vibrate` |
+| Lights | `setStaticColor`, `setAnimation`, `applyPreset`, `setActiveAnimation`, `setStandbyTime`, `readLightProfile`, `writeLightProfile` |
+| Game profiles | `remapButton`, `setMacro`, `setReportRate`, `setMacroRecording`, `readGameProfile`, `writeGameProfile` |
+| Low level | `readProfile`, `writeProfile`, `request`, `protocol.*` packet builders |
+
+Writes take effect immediately and only send the bytes that changed.
+
+## Examples
+
+From `lib/` after `npm install`:
+
+```bash
+npx tsx examples/check.ts                 # connection, firmware, battery, profiles, vibration, LED
+npx tsx examples/monitor.ts               # live state
+npx tsx examples/lights.ts preset Rainbow
+npx tsx examples/battery-led/index.ts     # battery level on the Home LED, reconnects on its own
+```
 
 ## Docs
 
-| | |
-|---|---|
-| [01 Metodologia](docs/01-metodologia.md) | como o app foi aberto |
-| [02 Arquitetura do app](docs/02-arquitetura-do-app.md) | proxy, fila, heartbeat |
-| [03 Dispositivo](docs/03-dispositivo.md) | PIDs, dongle, firmware |
-| [04 Protocolo HID](docs/04-protocolo-hid.md) | comandos |
-| [05 Report de estado](docs/05-report-de-estado.md) | botões, bateria, LEDs |
-| [06 Perfil de luz](docs/06-perfil-de-luz.md) | animações, zonas, presets |
-| [07 Perfil de jogo](docs/07-perfil-de-jogo.md) | mapeamento, macros, analógicos, gyro |
-| [08 Lib](docs/08-lib.md) | API |
-
-## Estrutura
-
-```
-decompiled/        app extraído (GameSir Connect 1.16.7)
-docs/              documentação
-lib/               lib TypeScript
-example-scripts/   scripts Python originais
-tools/             prepare-analysis.sh → analysis/ (fora do git)
-```
-
-## Validação no hardware
-
-Windows, controle com firmware 3.4.6: dongle `0x100B` (1.2.1) e cabo `0x1053`. Bluetooth fora do escopo.
+Written in Portuguese.
 
 | | |
 |---|---|
-| Heartbeat liga o report `0x12` | ✅ |
-| Report `0x12`: bateria, analógico esquerdo, ABXY, cor do Home; entradas mapeadas (1–9) × físicas (54–62) | ✅ |
-| Respostas chegam com report ID `0x10` | ✅ |
-| Versão de firmware, perfil ativo, leitura de todos os perfis | ✅ |
-| Layout do perfil de jogo e de luz vs dump real (ida e volta idêntica) | ✅ |
-| Vibração | ✅ |
-| Escrita do perfil de luz: cor fixa, só Home, preset, troca de animação | ✅ |
-| Luz 4 = LED do centro | ✅ |
-| IMU: contador (11), giroscópio (13–18), acelerômetro (19–24), eixos e sinais | ✅ |
-| Escrita do perfil de jogo: taxa de report, remapeamento (vale na hora) | ✅ |
-| Macro em L4: gravada pela lib e gravada pelo controle (`0F 16`) | ✅ |
-| Macro: Single Press, Long Press, loop | ✅ |
-| Macro: R4, comando de parar gravação | pendente |
-| Cabo (`0x1053`): firmware, perfis, `0x12`, carregamento, vibração, LED | ✅ |
+| [docs/api.md](docs/api.md) | API reference |
+| [docs/protocolo.md](docs/protocolo.md) | HID protocol: packets, commands, state report, profile layouts |
+| [docs/engenharia-reversa.md](docs/engenharia-reversa.md) | how the protocol was extracted from the app and verified on the device |
 
----
+## Development
 
-Projeto de interoperabilidade, sem afiliação com a GameSir. `decompiled/` é código da GameSir: remover antes de tornar o repo público.
+```bash
+cd lib
+npm install
+npm run check   # typecheck, Biome, tests
+npm run build
+```
+
+## License
+
+MIT. Not affiliated with or endorsed by GameSir. No GameSir code is included in this repository.

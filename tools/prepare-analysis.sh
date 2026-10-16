@@ -9,7 +9,7 @@ OUT=analysis
 PRETTIER="npx --yes prettier@3.8.1 --parser babel --print-width 120"
 
 if [[ ! -f "$SRC/main.js" ]]; then
-  echo "não achei $SRC/main.js; extraia o app.asar do GameSir Connect 1.16.7 (ver docs/01-metodologia.md)" >&2
+  echo "não achei $SRC/main.js; extraia o app.asar do GameSir Connect 1.16.7 (ver docs/engenharia-reversa.md)" >&2
   exit 1
 fi
 
