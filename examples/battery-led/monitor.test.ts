@@ -12,7 +12,7 @@ import {
 } from "gamesir-hid";
 import { describe, expect, it } from "vitest";
 import { indicatorsFor } from "./indicators.js";
-import { BatteryMonitor, type Connection, type FoundPad, type MonitorUpdate } from "./monitor.js";
+import { BatteryMonitor, type Connection, type FoundPad, type MonitorTiming, type MonitorUpdate } from "./monitor.js";
 
 const SLOT = 3;
 const ANIMATION_SIZE = 124;
@@ -89,14 +89,19 @@ function slotWith(pad: FakePad, animation: Animation): Uint8Array {
   return encodeLightProfile(profile).slice(LightOffset.animation(SLOT), LightOffset.animation(SLOT) + ANIMATION_SIZE);
 }
 
-function start(pads: FakePad[], connection: Connection = "dongle", searchEveryMs = 5) {
+interface StartOptions {
+  readonly connection?: Connection;
+  readonly timing?: Partial<MonitorTiming>;
+}
+
+function start(pads: FakePad[], { connection = "dongle", timing }: StartOptions = {}) {
   const updates: MonitorUpdate[] = [];
   const waiters: { match: (u: MonitorUpdate) => boolean; resolve: () => void }[] = [];
   const queue = [...pads];
   const monitor = new BatteryMonitor({
     slot: SLOT,
     indicators,
-    timing: { sampleEveryMs: 5, sampleTimeoutMs: 30, searchEveryMs },
+    timing: { sampleOnBatteryMs: 5, sampleOnPowerMs: 5, sampleTimeoutMs: 30, searchEveryMs: 5, ...timing },
     find: async (): Promise<FoundPad | null> => {
       const transport = queue.shift();
       return transport ? { transport, connection } : null;
@@ -156,7 +161,7 @@ describe("BatteryMonitor", () => {
   it("stays full on cable at 100 % after the controller stops reporting charge", async () => {
     const pad = new FakePad();
     pad.percent = 100;
-    const run = start([pad], "cable");
+    const run = start([pad], { connection: "cable" });
     await run.until(lightIs("charged"));
     expect(pad.slot()).toEqual(slotWith(pad, indicators.charged.animation));
     await run.finish();
@@ -184,8 +189,24 @@ describe("BatteryMonitor", () => {
     expect(run.updates.some((u) => u.kind === "battery")).toBe(false);
   });
 
+  it("samples rarely on battery and often on power", async () => {
+    const timing = { sampleOnBatteryMs: 60_000, sampleOnPowerMs: 5 };
+    const samples = (run: ReturnType<typeof start>) => run.updates.filter((u) => u.kind === "battery").length;
+
+    const onBattery = start([new FakePad()], { timing });
+    await onBattery.until((u) => u.kind === "battery");
+    await new Promise((r) => setTimeout(r, 100));
+    expect(samples(onBattery)).toBe(1);
+    await onBattery.finish();
+
+    const onCable = start([new FakePad()], { connection: "cable", timing });
+    await new Promise((r) => setTimeout(r, 100));
+    expect(samples(onCable)).toBeGreaterThan(3);
+    await onCable.finish();
+  });
+
   it("rescan searches right away instead of waiting for the next interval", async () => {
-    const run = start([], "dongle", 60_000);
+    const run = start([], { timing: { searchEveryMs: 60_000 } });
     await run.until((u) => u.kind === "searching");
     run.queue.push(new FakePad());
     run.monitor.rescan();

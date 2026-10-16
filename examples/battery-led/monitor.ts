@@ -29,9 +29,13 @@ export interface FoundPad {
   readonly connection: Connection;
 }
 
-/** Between samples the heartbeat stops and the controller stops streaming its state, which saves its battery. */
+/**
+ * Each sample is a single heartbeat, which makes the controller stream its state for about a second. On battery
+ * that radio time costs charge, so samples are spaced out; on cable or while charging they can be frequent.
+ */
 export interface MonitorTiming {
-  readonly sampleEveryMs: number;
+  readonly sampleOnBatteryMs: number;
+  readonly sampleOnPowerMs: number;
   readonly sampleTimeoutMs: number;
   readonly searchEveryMs: number;
 }
@@ -44,7 +48,12 @@ export interface MonitorOptions {
   readonly timing?: Partial<MonitorTiming>;
 }
 
-const DEFAULT_TIMING: MonitorTiming = { sampleEveryMs: 5000, sampleTimeoutMs: 1500, searchEveryMs: 3000 };
+const DEFAULT_TIMING: MonitorTiming = {
+  sampleOnBatteryMs: 60_000,
+  sampleOnPowerMs: 5000,
+  sampleTimeoutMs: 1500,
+  searchEveryMs: 3000,
+};
 
 interface SavedLight {
   readonly activeAnimation: number;
@@ -139,7 +148,7 @@ export class BatteryMonitor {
       this.session = session;
       while (!until.aborted) {
         await this.sample(session);
-        await wait(this.timing.sampleEveryMs, until);
+        await wait(this.sampleInterval(session), until);
       }
     } catch (error) {
       if (pad.isConnected) {
@@ -157,6 +166,11 @@ export class BatteryMonitor {
     offDisconnect();
     await pad.close();
     if (lost.signal.aborted && !signal.aborted) this.report({ kind: "disconnected" });
+  }
+
+  private sampleInterval({ connection, status }: Session): number {
+    const onBattery = connection !== "cable" && (status === undefined || status.kind === "discharging");
+    return onBattery ? this.timing.sampleOnBatteryMs : this.timing.sampleOnPowerMs;
   }
 
   private async readSlot(pad: Cyclone2): Promise<SavedLight> {

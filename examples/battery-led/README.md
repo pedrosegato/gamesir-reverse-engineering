@@ -1,6 +1,6 @@
 # battery-led
 
-Cyclone 2 battery level on the Home LED, as a Windows tray app ([releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases)) or a terminal script (`npm run battery-led`). Uses animation slot 4 and restores the original light on exit.
+Cyclone 2 battery level on the Home LED, as a Windows tray app ([releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases)) or a terminal script (`npm run battery-led`). Reads the battery once a minute on battery and every 5 s on cable. Uses animation slot 4 and restores the original light on exit.
 
 | Battery | LED |
 |---|---|
