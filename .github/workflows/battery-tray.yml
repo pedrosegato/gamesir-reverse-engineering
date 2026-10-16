@@ -6,6 +6,7 @@ on:
     tags: ["battery-tray-v*"]
     paths:
       - "examples/battery-led/**"
+      - "!examples/battery-led/**/*.md"
       - "lib/src/**"
       - "package.json"
       - "package-lock.json"
@@ -54,6 +55,7 @@ jobs:
         with:
           name: cyclone2-battery
           path: examples/battery-led/tray/dist/cyclone2-battery.exe
+          retention-days: 7
       - if: steps.version.outputs.number != ''
         uses: softprops/action-gh-release@v2
         with:
