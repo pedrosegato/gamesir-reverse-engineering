@@ -20,6 +20,9 @@ export interface Indicator {
 
 export type Indicators = Readonly<Record<IndicatorKey, Indicator>>;
 
+/** Animation slot 4, the last user slot; the original is written back on exit. */
+export const INDICATOR_SLOT = 3;
+
 const CHARGING_COLORS = ["#ff0000", "#ff9600", "#ffff00", "#00ff00", "#0096ff", "#b400ff"] as const;
 
 const solid = (label: string, color: string): Indicator => ({

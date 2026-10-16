@@ -2,7 +2,7 @@ import { createServer, type Server } from "node:net";
 import { isSea } from "node:sea";
 import { setTimeout as sleep } from "node:timers/promises";
 import { type Rgb, toRgb } from "gamesir-hid";
-import { INDICATORS } from "../indicators.js";
+import { INDICATOR_SLOT, INDICATORS } from "../indicators.js";
 import { describeUpdate } from "../messages.js";
 import { BatteryMonitor, type MonitorUpdate } from "../monitor.js";
 import { indicatorKey } from "../status.js";
@@ -12,7 +12,6 @@ import { type MenuEntry, Tray } from "./tray.js";
 
 const NAME = "Cyclone2Battery";
 const INSTANCE_PIPE = "\\\\.\\pipe\\cyclone2-battery";
-const SLOT = 3;
 const IDLE = toRgb("#808080");
 const QUIT_GRACE_MS = 5000;
 /** The controller is searched for when Windows reports a HID device change; this interval is only a fallback. */
@@ -55,7 +54,7 @@ export async function runTray(): Promise<void> {
   const stop = new AbortController();
 
   const monitor = new BatteryMonitor({
-    slot: SLOT,
+    slot: INDICATOR_SLOT,
     indicators: INDICATORS,
     timing: { searchEveryMs: FALLBACK_SEARCH_MS },
     onUpdate: (update) => {
