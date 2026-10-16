@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "check": "biome check && npm run typecheck --workspaces && npm test --workspaces",
-    "battery-led": "npm run battery-led -w examples"
+    "battery-led": "npm run battery-led -w examples --"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15"
