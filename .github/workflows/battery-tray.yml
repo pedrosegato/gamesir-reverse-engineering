@@ -26,6 +26,12 @@ jobs:
           name: cyclone2-battery
           path: apps/battery-tray/target/release/cyclone2-battery.exe
       - if: startsWith(github.ref, 'refs/tags/battery-tray-v')
+        id: version
+        shell: bash
+        run: echo "number=${GITHUB_REF_NAME#battery-tray-v}" >> "$GITHUB_OUTPUT"
+      - if: startsWith(github.ref, 'refs/tags/battery-tray-v')
         uses: softprops/action-gh-release@v2
         with:
+          name: cyclone2-battery ${{ steps.version.outputs.number }}
+          body_path: apps/battery-tray/RELEASE.md
           files: apps/battery-tray/target/release/cyclone2-battery.exe
