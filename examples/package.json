@@ -6,8 +6,6 @@
     "battery-led": "tsx battery-led/index.ts",
     "battery-tray": "tsx battery-led/tray/main.ts",
     "build:battery-tray": "tsx battery-led/tray/build.ts",
-    "center-leds": "tsx center-leds.ts",
-    "center-leds-sweep": "tsx center-leds-sweep.ts",
     "typecheck": "tsc",
     "test": "vitest run"
   },
