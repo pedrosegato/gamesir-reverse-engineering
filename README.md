@@ -77,7 +77,7 @@ Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
 | Escrita do perfil de jogo: taxa de report, remapeamento (vale na hora) | ✅ |
 | Macro em L4: gravada pela lib e gravada pelo controle (`0F 16`) | ✅ |
 | Macro: Single Press, Long Press, loop | ✅ |
-| Macro: soltar no meio em Long Press, R4, comando de parar gravação | pendente |
+| Macro: R4, comando de parar gravação | pendente |
 | Cabo, Bluetooth | pendente |
 
 ---

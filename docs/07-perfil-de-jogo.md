@@ -83,9 +83,9 @@ Comportamento medido (A, B, X, Y a 200/300 ms, último passo com delay 0, loop d
 | Modo | Loop | Comportamento |
 |---|---|---|
 | Single Press | não | um toque toca a sequência inteira, mesmo segurando; outro toque no meio interrompe |
-| Long Press | não | toca uma vez enquanto segura; segurando 0,6–0,8 s além do fim, não repete. Soltar no meio: não testado |
+| Long Press | não | toca enquanto segura; **soltar corta na hora**, inclusive o passo atual (A de 200 ms saiu com 103 ms; X com 13 ms). Segurando 0,6–0,8 s além do fim, não repete |
 | Single Press | sim | um toque inicia e repete sozinho; outro toque para |
-| Long Press | sim | repete enquanto segura; parou ao soltar no intervalo entre voltas |
+| Long Press | sim | repete enquanto segura; parou ao soltar no intervalo entre voltas (soltar no meio de uma volta: não testado) |
 
 - **Loop: recomeça `loopMs` depois do fim do último passo** (medido 1001–1013 ms), não do início. Volta completa: 3 × 300 + 200 + 1000 = 2100 ms (medido 2091–2116).
 - UI: "Trigger Method" = "Single Press" (bit 1 desligado) ou "Long Press" (ligado); "Loop" é uma chave à parte. O intervalo do loop (`cycleTime`, +8..+9) aparece no campo de delay do último passo (`renderer.js:13521`).
