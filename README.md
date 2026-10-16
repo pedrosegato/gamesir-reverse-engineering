@@ -55,6 +55,8 @@ Writes take effect immediately and only send the bytes that changed.
 
 [`examples/`](examples) has a few usage examples. The main one is [`battery-led`](examples/battery-led), which shows the battery level on the Home LED: `npm install`, then `npm run battery-led`.
 
+[`apps/battery-tray`](apps/battery-tray) is the same battery indicator as a native Windows tray app (Rust, single 0.5 MB `.exe`, optional start with Windows).
+
 ## Docs
 
 Written in Portuguese.
