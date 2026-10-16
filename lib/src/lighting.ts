@@ -2,7 +2,6 @@ import { BLACK, type ColorInput, type Rgb, toRgb } from "./color.js";
 import { type LedZone, LIGHT_PROFILE_SIZE } from "./constants.js";
 
 export const ANIMATION_COUNT = 5;
-/** O app só deixa escolher as animações 0..3; a 4 é o efeito de carregamento. */
 export const USER_ANIMATION_COUNT = 4;
 export const CHARGING_ANIMATION = 4;
 export const FRAME_COUNT = 8;
@@ -10,7 +9,7 @@ export const MAX_SPEED = 20;
 export const MAX_BRIGHTNESS = 100;
 export const STANDBY_MINUTES = [0, 1, 5, 10, 20] as const;
 
-/** Ordem das zonas dentro de cada frame. Difere da ordem do report de estado (`LED_ZONES`). */
+/** Difere da ordem do report de estado (`LED_ZONES`). */
 export const FRAME_ZONE_ORDER = [
   "LowerLeft",
   "LowerRight",
@@ -37,17 +36,13 @@ export const LightOffset = {
   Reserved: TRAILER_OFFSET + 7,
 } as const;
 
-/**
- * Zonas pelos nomes internos do app. No Cyclone 2 (números da tela de luzes do app):
- * LowerLeft = lateral esquerda (1), Home = botão Home (2), LowerRight = lateral direita (3),
- * UpperRight = luz 4, UpperLeft = sem LED.
- */
+/** No Cyclone 2: LowerLeft/LowerRight = laterais, Home = botão Home, UpperRight = LED do centro, UpperLeft = sem LED. */
 export type Frame = Record<LedZone, Rgb>;
 export type FrameInput = Partial<Record<LedZone, ColorInput>>;
 
 export interface Animation {
   keyFrameCount: number;
-  /** O app nunca altera; vale 5 nos perfis de fábrica. */
+  /** Sempre 5; o app nunca altera. */
   effectCount: number;
   /** 0..20, maior = mais rápido. */
   speed: number;
@@ -62,14 +57,13 @@ export interface LightProfile {
   userEffectIndex: number;
   profileLed: Rgb;
   raiseWakeUp: boolean;
-  /** Minutos sem uso até o controle dormir; 0 = nunca. */
+  /** Minutos; 0 = nunca dorme. */
   standbyTime: number;
   reserved: number[];
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-/** No perfil a velocidade é gravada invertida: byte 0 = mais rápido. */
 export const encodeSpeed = (speed: number) => MAX_SPEED - clamp(speed, 0, MAX_SPEED);
 export const decodeSpeed = (byte: number) => MAX_SPEED - Math.min(byte, MAX_SPEED);
 

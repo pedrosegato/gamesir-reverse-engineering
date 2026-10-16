@@ -1,4 +1,4 @@
-// Split a webpack4 bundle into its modules without executing any module body.
+// Separa os módulos do bundle webpack 4 sem executar nenhum deles.
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const [src, outDir] = process.argv.slice(2);
 let code = fs.readFileSync(src, 'utf8');

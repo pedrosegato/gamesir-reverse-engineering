@@ -8,7 +8,6 @@ export interface Indicator {
 
 const CHARGING_COLORS = ["#ff0000", "#ff9600", "#ffff00", "#00ff00", "#0096ff", "#b400ff"] as const;
 
-/** Um frame por cor, acendendo só `zone`; as outras zonas ficam apagadas. */
 function frames(zone: LedZone, ...colors: ColorInput[]): FrameInput[] {
   return colors.map((color) => {
     const frame: FrameInput = {};

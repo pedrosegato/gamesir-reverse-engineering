@@ -6,7 +6,7 @@ const FUN_RESERVED_SIZE = 17;
 const MACRO_STEP_COUNT = 30;
 const CURVE_POINT_COUNT = 5;
 
-/** Ordem dos 16 blocos de mapeamento simples no perfil (array `Fo` do app). */
+/** Mesma ordem dos blocos no perfil. */
 export const MAPPED_BUTTONS = [
   "Up",
   "Down",
@@ -32,15 +32,14 @@ export const StickOutput = { LeftStick: 1, RightStick: 2, Keys: 3, Mouse: 4 } as
 export const CurveType = { Linear: 0, Curved: 1, SCurve: 2, Custom: 3 } as const;
 export const MotionActivation = { Off: 0, Hold: 1, Toggle: 2, Always: 3 } as const;
 export const HairTriggerMode = { Rapid: 1, Fix: 2 } as const;
-/** Níveis de vibração aceitos pelo app (slider 0..4). */
 export const MOTOR_LEVELS = [0, 25, 50, 75, 100] as const;
 
 export interface KeyMapping {
   turboEnabled: boolean;
-  /** 0..30 (Hz). */
+  /** Hz, 0..30. */
   turboSpeed: number;
   mapEnabled: boolean;
-  /** Até 3 `KeyCode` pressionados juntos; 0 = vazio. */
+  /** `KeyCode`s pressionados juntos; 0 = vazio. */
   mapTo: [number, number, number];
   toggle: boolean;
 }
@@ -54,10 +53,10 @@ export interface MacroStep {
 
 export interface Macro {
   enabled: boolean;
-  /** "Long Press" no app: toca enquanto o botão estiver pressionado. Desligado = "Single Press": um toque inicia, outro interrompe. */
+  /** "Long Press": toca enquanto o botão estiver pressionado. Desligado ("Single Press"): um toque inicia, outro interrompe. */
   holdToTrigger: boolean;
   loop: boolean;
-  /** Do fim do último passo até recomeçar (medido com delay 0 no último passo). */
+  /** Do fim do último passo até recomeçar. */
   loopMs: number;
   steps: MacroStep[];
 }
@@ -104,7 +103,7 @@ export interface AxisMapping {
   mouseDpi: number;
   output: number;
   cross: number;
-  /** `KeyCode` por direção, usados quando `output` = Keys. */
+  /** `KeyCode`s usados quando `output` = Keys. */
   up: number;
   down: number;
   left: number;
@@ -132,7 +131,6 @@ export interface Motion {
 }
 
 export interface FunData {
-  /** 0/25/50/75/100, ver `MOTOR_LEVELS`. */
   motors: { left: number; right: number; leftTrigger: number; rightTrigger: number };
   audio: { enabled: boolean; volume: number; mixer: number; micMute: number; micSensitivity: number };
   shift: { enabled: boolean; value: number };

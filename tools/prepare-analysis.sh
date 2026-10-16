@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Gera analysis/ a partir do app extraído: bundles formatados e main.js separado
-# em módulos webpack. As referências de linha em docs/ apontam para esses arquivos.
+# As referências arquivo:linha de docs/ apontam para os arquivos gerados aqui.
 # Uso: tools/prepare-analysis.sh [pasta do app.asar extraído]   (padrão: decompiled)
 set -euo pipefail
 cd "$(dirname "$0")/.."

@@ -1,4 +1,3 @@
-/** Códigos de tecla usados nos mapeamentos e macros. Tabela `ko` do app. */
 export const KeyCode = {
   Up: 1,
   Down: 2,

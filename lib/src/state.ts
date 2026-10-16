@@ -12,12 +12,11 @@ const Offset = {
   LedColors: 38,
   MacroRecord: 53,
   PhysicalInputs: 54,
-  /** O app lê L4/R4/M daqui (byte `System` das entradas físicas) nos dois blocos. */
+  /** L4/R4/M só existem aqui (byte `System` das entradas físicas); valem para os dois blocos. */
   BackButtons: 60,
 } as const;
 
-/** Posição dentro de um bloco de entradas. */
-const Input = {
+const BlockOffset = {
   LeftX: 0,
   LeftY: 1,
   RightX: 2,
@@ -29,7 +28,7 @@ const Input = {
   RightTrigger: 8,
 } as const;
 
-const MIN_LENGTH = Offset.PhysicalInputs + Input.RightTrigger + 1;
+const MIN_LENGTH = Offset.PhysicalInputs + BlockOffset.RightTrigger + 1;
 
 export type Hat = "Up" | "UpRight" | "Right" | "DownRight" | "Down" | "DownLeft" | "Left" | "UpLeft" | null;
 
@@ -67,11 +66,11 @@ export interface Vec3 {
 }
 
 /**
- * Valores crus int16, sem calibração. Eixos com o controle deitado, botões para cima:
- * X → lateral direita, Y → sai da face, Z → para trás (para quem segura). Giroscópio pela regra da mão direita.
+ * int16 crus, sem calibração. Com o controle deitado e os botões para cima: X → lateral direita,
+ * Y → sai da face, Z → para trás. Giroscópio pela regra da mão direita.
  */
 export interface Imu {
-  /** Contador de 8 bits, avança a cada amostra. */
+  /** 8 bits; dá a volta em 255. */
   counter: number;
   gyro: Vec3;
   accel: Vec3;
@@ -88,7 +87,6 @@ export interface Inputs {
 
 /** Os campos de `Inputs` no topo já passaram pelo mapeamento do perfil ativo. */
 export interface GamepadState extends Inputs {
-  /** Entradas físicas, antes do mapeamento. */
   physical: Inputs;
   imu: Imu;
   chargeState: number;
@@ -102,7 +100,6 @@ export interface GamepadState extends Inputs {
 
 const bit = (byte: number, n: number) => (byte & (1 << n)) !== 0;
 
-/** 0..255 com centro em 128 → -1..1. */
 function axis(value: number): number {
   const delta = value - 128;
   return Math.round((1e4 * delta) / (delta > 0 ? 127 : 128)) / 1e4;
@@ -113,7 +110,7 @@ export function isStateReport(data: ArrayLike<number>): boolean {
 }
 
 function parseInputs(d: Uint8Array, base: number): Inputs {
-  const at = (field: keyof typeof Input) => d[base + Input[field]];
+  const at = (field: keyof typeof BlockOffset) => d[base + BlockOffset[field]];
   const face = at("HatAndFace");
   const shoulders = at("Shoulders");
   const system = at("System");

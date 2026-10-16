@@ -10,7 +10,6 @@ import {
   RESPONSE_REPORT_ID,
 } from "../src/index.js";
 
-/** Controle simulado: guarda os perfis em memória e responde como o firmware deveria. */
 class FakeController implements HidTransport {
   profiles = new Map<number, Uint8Array>([
     [Profile.P1, new Uint8Array(GAME_PROFILE_SIZE)],
@@ -67,7 +66,6 @@ class FakeController implements HidTransport {
     this.disconnectListener?.(new Error("dispositivo removido"));
   }
 
-  /** Notificação espontânea do controle, ex.: `10 0F …` depois de gravar uma macro. */
   notify(bytes: number[]): void {
     const report = new Uint8Array(64);
     report[0] = RESPONSE_REPORT_ID;

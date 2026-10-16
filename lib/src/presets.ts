@@ -2,7 +2,6 @@ import { type Animation, FRAME_COUNT, type FrameInput, frame } from "./lighting.
 
 const same = (c: string): FrameInput => ({ Home: c, UpperLeft: c, LowerLeft: c, LowerRight: c, UpperRight: c });
 
-/** Presets da tela de luzes do GameSir Connect, com as cores e velocidades originais. */
 export const PRESETS = {
   Flow: {
     speed: 17,
@@ -43,7 +42,6 @@ export const PRESETS = {
 
 export type PresetName = keyof typeof PRESETS;
 
-/** Igual ao `applyPreset` do app: troca velocidade e frames, mantém brilho e effectCount. */
 export function applyPreset(target: Animation, name: PresetName): Animation {
   const preset = PRESETS[name];
   return {

@@ -10,11 +10,10 @@ export const CyclonePid = {
 
 export const CYCLONE2_PIDS: readonly number[] = Object.values(CyclonePid);
 
-/** Dongle plugado sem controle conectado a ele (visto com o controle no cabo). Não responde a comandos. */
+/** Dongle sem controle conectado; não responde a comandos. */
 export const DONGLE_IDLE_PID = 0x0575;
 
 export const OUTPUT_REPORT_ID = 0x0f;
-/** Respostas chegam com 0x10; o app não confere, só exclui o 0x12. */
 export const RESPONSE_REPORT_ID = 0x10;
 export const STATE_REPORT_ID = 0x12;
 
@@ -73,6 +72,5 @@ export function cmdName(cmd: number): string {
   return entry ? entry[0] : `Unknown_0x${cmd.toString(16).padStart(2, "0")}`;
 }
 
-/** Ordem das cores no report de estado 0x12. */
 export const LED_ZONES = ["Home", "LowerLeft", "LowerRight", "UpperLeft", "UpperRight"] as const;
 export type LedZone = (typeof LED_ZONES)[number];

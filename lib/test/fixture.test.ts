@@ -9,7 +9,6 @@ import {
   parseState,
 } from "../src/index.js";
 
-/** Dump real: Cyclone 2 via dongle 0x100B, firmware 3.4.6, dongle 1.2.1. */
 const dump = JSON.parse(readFileSync(new URL("./fixtures/dump-dongle-fw346.json", import.meta.url), "utf8"));
 const bytes = (hex: string) => Uint8Array.from(Buffer.from(hex, "hex"));
 

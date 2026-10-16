@@ -13,7 +13,6 @@ import {
   PRESETS,
 } from "../src/index.js";
 
-/** Perfil de luz montado byte a byte, como nos primeiros testes no hardware: cor fixa num slot, 5 animações iguais. */
 function handBuiltProfile(slot: number, r: number, g: number, b: number): number[] {
   const anim = [1, 5, 0, 100];
   for (let i = 0; i < 5; i++) anim.push(...(i === slot ? [r, g, b] : [0, 0, 0]));

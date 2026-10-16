@@ -59,7 +59,6 @@ async function restore(): Promise<void> {
   console.log("perfil restaurado");
 }
 
-/** Imprime físico × saída a cada mudança, com o tempo desde o início. */
 async function watch(seconds: number): Promise<void> {
   const start = Date.now();
   let last = "";

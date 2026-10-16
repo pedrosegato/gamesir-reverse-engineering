@@ -14,7 +14,6 @@ import { indicatorsFor } from "./indicators.js";
 import { type BatteryStatus, classify, type IndicatorKey, indicatorKey } from "./status.js";
 
 const RECONNECT_MS = 2000;
-/** Sem report de estado por esse tempo: o controle dormiu ou saiu do alcance do dongle. */
 const SILENCE_MS = 5000;
 
 const CONNECTION: Partial<Record<number, string>> = {
@@ -25,12 +24,10 @@ const CONNECTION: Partial<Record<number, string>> = {
 };
 
 interface Options {
-  /** Índice da animação usada como indicador (0..3); as outras não são tocadas. */
   readonly slot: number;
   readonly zone: LedZone;
 }
 
-/** O que existia no slot antes do indicador, para devolver ao sair. */
 interface SavedLight {
   readonly activeAnimation: number;
   readonly animation: Animation;
@@ -60,7 +57,7 @@ const indicators = indicatorsFor(options.zone);
 const stop = new AbortController();
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => stop.abort());
 
-/** Guardado na primeira conexão: depois de reconectar, o slot já contém o indicador. */
+/** Só na primeira conexão: depois de reconectar, o slot já contém o indicador. */
 let saved: SavedLight | undefined;
 
 function describe(status: BatteryStatus): string {
@@ -90,7 +87,6 @@ async function waitForController(signal: AbortSignal): Promise<Cyclone2 | null> 
   return null;
 }
 
-/** Acompanha a bateria até o controle sumir ou o programa receber Ctrl+C. */
 async function runSession(pad: Cyclone2, signal: AbortSignal): Promise<void> {
   if (!saved) {
     const light = await pad.readLightProfile();

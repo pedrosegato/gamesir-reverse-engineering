@@ -54,7 +54,7 @@ export class Cyclone2 {
   private disconnectListeners = new Set<(error?: Error) => void>();
   private connected = true;
   private unsubscribe: () => void;
-  /** Última imagem conhecida de cada perfil, base para escrever só o diff. */
+  /** Base para escrever só o trecho alterado. */
   private profileCache = new Map<number, Uint8Array>();
   lastState: GamepadState | null = null;
 
@@ -90,7 +90,7 @@ export class Cyclone2 {
     await this.transport.close();
   }
 
-  /** Controle removido, dongle sem controle ou falha de escrita. Dispara uma vez; depois disso, feche e reabra. */
+  /** Dispara uma vez; para continuar, feche e abra de novo. */
   onDisconnect(listener: (error?: Error) => void): () => void {
     this.disconnectListeners.add(listener);
     return () => this.disconnectListeners.delete(listener);
@@ -108,7 +108,7 @@ export class Cyclone2 {
     return () => this.stateListeners.delete(listener);
   }
 
-  /** Disparado quando o perfil muda pelo próprio controle (ex.: M + analógico troca a animação). */
+  /** Mudanças feitas pelo próprio controle: M + analógico, fim de gravação de macro. */
   onProfileChanged(listener: (c: P.ProfileChange) => void): () => void {
     this.changeListeners.add(listener);
     return () => this.changeListeners.delete(listener);
@@ -162,7 +162,6 @@ export class Cyclone2 {
     return this.transport.write(packet);
   }
 
-  /** Um pedido por vez; reenvia a cada `timeoutMs` até chegar resposta, como a fila do app. */
   request(packet: Uint8Array, opts: RequestOptions = {}): Promise<Uint8Array> {
     const run = () => this.doRequest(packet, opts);
     const result = this.queue.then(run, run);
@@ -224,7 +223,6 @@ export class Cyclone2 {
     if (cached) cached.set(Array.from(data), offset);
   }
 
-  /** Grava a imagem inteira do perfil escrevendo só o trecho que mudou, como o app. */
   async writeProfileImage(profileNum: number, image: Uint8Array): Promise<void> {
     const previous = this.profileCache.get(profileNum) ?? (await this.readProfile(profileNum));
     const range = diffRange(previous, image);
@@ -259,7 +257,6 @@ export class Cyclone2 {
     });
   }
 
-  /** Como o app: desliga o mapeamento simples do botão; sem passos, a macro fica desligada. */
   async setMacro(
     profileNum: GameProfileNumber,
     button: "L4" | "R4",
@@ -299,7 +296,6 @@ export class Cyclone2 {
     return next;
   }
 
-  /** Mesma troca que M + analógico esquerdo faz no controle. */
   async setActiveAnimation(index: number): Promise<void> {
     await this.updateLightProfile((p) => {
       p.activeAnimation = index;
@@ -325,7 +321,6 @@ export class Cyclone2 {
     });
   }
 
-  /** Cor fixa: uma cor para todas as zonas, ou uma por zona. */
   async setStaticColor(color: ColorInput | FrameInput, opts: { slot?: number; brightness?: number } = {}) {
     const isPerZone = typeof color === "object" && !Array.isArray(color) && !("r" in color);
     const frame = isPerZone ? (color as FrameInput) : solidFrame(color as ColorInput);
@@ -357,7 +352,6 @@ export class Cyclone2 {
     await this.send(P.setLightStatus(true, 1));
   }
 
-  /** Pausa a animação mostrando o frame `frameIndex` (0..7) da animação ativa. */
   async showFrame(frameIndex: number): Promise<void> {
     await this.send(P.setLightStatus(false, frameIndex + 1));
   }

@@ -7,7 +7,7 @@ export const CYCLONE2_FILTERS: HIDDeviceFilter[] = CYCLONE2_PIDS.map((productId)
   usagePage: CONFIG_USAGE_PAGE,
 }));
 
-/** Abre o seletor do navegador; precisa ser chamado a partir de um gesto do usuário. */
+/** Precisa ser chamado a partir de um gesto do usuário (clique, tecla). */
 export async function requestCyclone2(): Promise<WebHidTransport | null> {
   const [device] = await navigator.hid.requestDevice({ filters: CYCLONE2_FILTERS });
   return device ? WebHidTransport.open(device) : null;

@@ -68,7 +68,7 @@ export function refreshProfile(profileNum: number, offset: number, length: numbe
 export const setLightStatus = (playing: boolean, frameIndex = 0) =>
   packet(Cmd.LightStatus, playing ? 1 : 0, frameIndex);
 
-/** Mesmo opcode de `setLightStatus`: no fio é idêntico a `setLightStatus(false, 0)`. */
+/** No fio é idêntico a `setLightStatus(false, 0)`. */
 export const readRgb = () => packet(Cmd.LightStatus);
 
 export const vibrate = (left: number, right: number) => packet(Cmd.Vibrate, ...VIBRATE_MAGIC, left, right);
@@ -81,10 +81,10 @@ export const setMacroRecord = (button: keyof typeof MacroKey, state: MacroRecord
 
 export const setCalibrationState = (state: number) => packet(Cmd.Calibration, state);
 
-/** Coloca o controle em modo de atualização de firmware. */
+/** Entra em modo de atualização de firmware. */
 export const quickUpdate = () => packet(Cmd.QuickUpdate, ...QUICK_UPDATE_MAGIC);
 
-/** Coloca o controle em modo DFU. */
+/** Entra em modo DFU. */
 export const enterUpgradeMode = () => packet(Cmd.RequestUpgrade);
 
 export interface Response {
@@ -106,7 +106,7 @@ export interface ProfileChange {
   length: number;
 }
 
-/** Como o app, não confere o report ID da resposta: só descarta o report de estado. */
+/** Não confere o report ID da resposta (o firmware usa 0x10); só descarta o report de estado. */
 export function parseResponse(data: ArrayLike<number>): Response | null {
   if (data.length < 2 || data[0] === STATE_REPORT_ID) return null;
   const raw = Uint8Array.from(data);
@@ -131,7 +131,6 @@ export interface FirmwareVersion {
   raw: Uint8Array;
 }
 
-/** Cada caractere ASCII vira um componente: "123" → "1.2.3". */
 function versionAt(raw: Uint8Array, start: number): string {
   const text = new TextDecoder().decode(raw.slice(start, start + 5));
   return text

@@ -25,7 +25,6 @@ async function restore(): Promise<void> {
   console.log("perfil restaurado");
 }
 
-/** Mostra tudo que não é report de estado enquanto `action` roda. */
 async function capture(label: string, action: () => Promise<unknown>, settleMs = 400): Promise<void> {
   const seen: string[] = [];
   const off = pad.onRaw((raw) => {

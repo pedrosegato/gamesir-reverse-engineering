@@ -1,4 +1,3 @@
-/** Faixas de carga em ordem crescente; cada uma vai até `upTo` %, inclusive. */
 export const LEVELS = [
   { name: "critical", upTo: 9 },
   { name: "low", upTo: 25 },
@@ -9,7 +8,7 @@ export const LEVELS = [
 
 export type Level = (typeof LEVELS)[number]["name"];
 
-/** A leitura oscila ±1 % perto das bordas; a faixa atual só muda depois de passar a borda por essa margem. */
+/** A leitura oscila ±1 % perto das bordas. */
 export const HYSTERESIS = 2;
 
 export interface BatterySample {
@@ -22,7 +21,6 @@ export type BatteryStatus =
   | { readonly kind: "charging"; readonly percent: number }
   | { readonly kind: "discharging"; readonly percent: number; readonly level: Level };
 
-/** O que decide a luz: duas leituras com a mesma chave mostram o mesmo indicador. */
 export type IndicatorKey = Exclude<BatteryStatus["kind"], "discharging"> | Level;
 
 export const indicatorKey = (status: BatteryStatus): IndicatorKey =>
