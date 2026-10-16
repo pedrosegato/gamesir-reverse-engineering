@@ -2,7 +2,7 @@ import { createServer, type Server } from "node:net";
 import { isSea } from "node:sea";
 import { setTimeout as sleep } from "node:timers/promises";
 import { type Rgb, toRgb } from "gamesir-hid";
-import { indicatorsFor } from "../indicators.js";
+import { INDICATORS } from "../indicators.js";
 import { describeUpdate } from "../messages.js";
 import { BatteryMonitor, type MonitorUpdate } from "../monitor.js";
 import { indicatorKey } from "../status.js";
@@ -18,8 +18,6 @@ const QUIT_GRACE_MS = 5000;
 /** The controller is searched for when Windows reports a HID device change; this interval is only a fallback. */
 const FALLBACK_SEARCH_MS = 30_000;
 
-const indicators = indicatorsFor("Home");
-
 interface Shown {
   readonly text: string;
   readonly color: Rgb;
@@ -27,8 +25,8 @@ interface Shown {
 
 function shownFor(update: MonitorUpdate): Shown | undefined {
   if (update.kind === "light" || update.kind === "error") return undefined;
-  const color = update.kind === "battery" ? toRgb(indicators[indicatorKey(update.status)].icon) : IDLE;
-  return { text: describeUpdate(update, indicators), color };
+  const color = update.kind === "battery" ? toRgb(INDICATORS[indicatorKey(update.status)].icon) : IDLE;
+  return { text: describeUpdate(update, INDICATORS), color };
 }
 
 /** A second instance finds the pipe taken and exits. */
@@ -52,16 +50,16 @@ export async function runTray(): Promise<void> {
   process.on("uncaughtException", fail);
   process.on("unhandledRejection", fail);
 
-  let shown: Shown = { text: describeUpdate({ kind: "searching" }, indicators), color: IDLE };
+  let shown: Shown = { text: describeUpdate({ kind: "searching" }, INDICATORS), color: IDLE };
   let quitting = false;
   const stop = new AbortController();
 
   const monitor = new BatteryMonitor({
     slot: SLOT,
-    indicators,
+    indicators: INDICATORS,
     timing: { searchEveryMs: FALLBACK_SEARCH_MS },
     onUpdate: (update) => {
-      log(describeUpdate(update, indicators));
+      log(describeUpdate(update, INDICATORS));
       shown = shownFor(update) ?? shown;
       refresh();
     },

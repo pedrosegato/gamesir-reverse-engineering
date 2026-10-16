@@ -2,6 +2,7 @@ import { type Animation, Cyclone2, Cyclone2Pid, type HidTransport, protocol } fr
 import { findControllers, NodeHidTransport } from "gamesir-hid/node";
 import type { Indicators } from "./indicators.js";
 import { type BatterySample, type BatteryStatus, classify, type IndicatorKey, indicatorKey } from "./status.js";
+import { Stepper } from "./stepper.js";
 
 export type Connection = "cable" | "wireless" | "dongle";
 
@@ -64,6 +65,7 @@ type WakeSlot = "search" | "session";
 interface Session {
   readonly pad: Cyclone2;
   readonly connection: Connection;
+  readonly stepper: Stepper;
   status?: BatteryStatus;
   shown?: LightShown;
   writes: Promise<void>;
@@ -135,12 +137,22 @@ export class BatteryMonitor {
 
   private async watch({ transport, connection }: FoundPad, signal: AbortSignal): Promise<void> {
     const pad = new Cyclone2(transport);
+    const session: Session = {
+      pad,
+      connection,
+      writes: Promise.resolve(),
+      stepper: new Stepper((frame, isCurrent) =>
+        this.enqueue(session, async () => {
+          if (isCurrent()) await pad.showFrame(frame);
+        }),
+      ),
+    };
     let lost = false;
     const offDisconnect = pad.onDisconnect(() => {
       lost = true;
+      session.stepper.stop();
       this.wakers.session?.();
     });
-    const session: Session = { pad, connection, writes: Promise.resolve() };
     this.report({ kind: "connected", connection });
 
     try {
@@ -157,6 +169,7 @@ export class BatteryMonitor {
       }
     } finally {
       this.session = undefined;
+      session.stepper.stop();
     }
 
     if (signal.aborted && pad.isConnected) {
@@ -218,28 +231,50 @@ export class BatteryMonitor {
     return session.status && indicatorKey(session.status);
   }
 
-  /** Writes are queued: each reads the light profile and writes only the difference. */
-  private apply(session: Session): Promise<void> {
-    session.writes = session.writes.then(async () => {
-      const target = this.target(session);
-      if (target === undefined || target === session.shown) return;
-      try {
-        await this.show(session.pad, target);
-        session.shown = target;
-        this.report({ kind: "light", shown: target });
-      } catch (error) {
-        this.report({ kind: "error", during: "light", message: (error as Error).message });
-      }
-    });
-    return session.writes;
+  /** Writes go one at a time, so a frame step never lands in the middle of a profile write. */
+  private enqueue(session: Session, write: () => Promise<void>): Promise<void> {
+    const done = session.writes.then(write);
+    session.writes = done.catch(() => undefined);
+    return done;
   }
 
+  /** Each light change reads the light profile and writes only the difference. */
+  private apply(session: Session): Promise<void> {
+    return this.enqueue(session, async () => {
+      const target = this.target(session);
+      if (target === undefined || target === session.shown) return;
+      session.stepper.stop();
+      try {
+        await this.show(session.pad, target);
+      } catch (error) {
+        this.reportLightError(session, error);
+        return;
+      }
+      session.shown = target;
+      this.report({ kind: "light", shown: target });
+      const steps = target === "original" ? undefined : this.options.indicators[target].steps;
+      if (!steps) return;
+      session.stepper.play(steps).catch((error: unknown) => {
+        session.shown = undefined;
+        this.reportLightError(session, error);
+      });
+    });
+  }
+
+  private reportLightError({ pad }: Session, error: unknown): void {
+    if (pad.isConnected) this.report({ kind: "error", during: "light", message: (error as Error).message });
+  }
+
+  /** Resumes playback too: a stepped indicator, or a previous run cut off mid-step, leaves it paused on a frame. */
   private async show(pad: Cyclone2, target: LightShown): Promise<void> {
     const { slot, indicators } = this.options;
-    if (target !== "original") {
-      await pad.setAnimation(indicators[target].animation, { slot });
-      return;
-    }
+    if (target !== "original") await pad.setAnimation(indicators[target].animation, { slot });
+    else await this.restore(pad);
+    await pad.playLights();
+  }
+
+  private async restore(pad: Cyclone2): Promise<void> {
+    const { slot } = this.options;
     const saved = this.saved;
     if (!saved) return;
     await pad.updateLightProfile((light) => ({

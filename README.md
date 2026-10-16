@@ -53,7 +53,7 @@ Writes take effect immediately and only send the bytes that changed.
 
 ## Examples
 
-[`examples/`](examples). [`battery-led`](examples/battery-led) shows the battery level on the Home LED; it is also a Windows tray app on the [releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases) page.
+[`examples/`](examples). [`battery-led`](examples/battery-led) shows the battery level on the controller LEDs; it is also a Windows tray app on the [releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases) page.
 
 ## Docs
 

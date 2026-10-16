@@ -11,18 +11,24 @@ import {
   STATE_REPORT_ID,
 } from "gamesir-hid";
 import { describe, expect, it } from "vitest";
-import { indicatorsFor } from "./indicators.js";
+import { INDICATORS, type Indicators } from "./indicators.js";
 import { BatteryMonitor, type Connection, type FoundPad, type MonitorTiming, type MonitorUpdate } from "./monitor.js";
 
 const SLOT = 3;
 const ANIMATION_SIZE = 124;
-const indicators = indicatorsFor("Home");
+const STEPPED: Indicators = {
+  ...INDICATORS,
+  critical: { ...INDICATORS.critical, steps: { frames: [0, 1, 2], stepMs: 2, holdMs: 2 } },
+};
+
+type LightStatus = number | "play";
 
 class FakePad implements HidTransport {
   readonly light = new Uint8Array(LIGHT_PROFILE_SIZE).fill(7, 1).fill(1, 0, 1);
   percent = 40;
   charging = false;
   asleep = false;
+  readonly lightStatus: LightStatus[] = [];
   private listener: ((r: Uint8Array) => void) | null = null;
   private disconnectListener: ((error?: Error) => void) | null = null;
 
@@ -30,6 +36,10 @@ class FakePad implements HidTransport {
     const [, cmd, num, hi, lo, len] = report;
     if (cmd === Cmd.Heartbeat) {
       if (!this.asleep) this.emit(this.stateReport());
+      return;
+    }
+    if (cmd === Cmd.LightStatus) {
+      this.lightStatus.push(num === 1 ? "play" : hi - 1);
       return;
     }
     if (num !== Profile.Light) return;
@@ -92,9 +102,10 @@ function slotWith(pad: FakePad, animation: Animation): Uint8Array {
 interface StartOptions {
   readonly connection?: Connection;
   readonly timing?: Partial<MonitorTiming>;
+  readonly indicators?: Indicators;
 }
 
-function start(pads: FakePad[], { connection = "dongle", timing }: StartOptions = {}) {
+function start(pads: FakePad[], { connection = "dongle", timing, indicators = INDICATORS }: StartOptions = {}) {
   const updates: MonitorUpdate[] = [];
   const waiters: { match: (u: MonitorUpdate) => boolean; resolve: () => void }[] = [];
   const queue = [...pads];
@@ -130,6 +141,10 @@ function start(pads: FakePad[], { connection = "dongle", timing }: StartOptions 
 
 const lightIs = (shown: string) => (u: MonitorUpdate) => u.kind === "light" && u.shown === shown;
 
+async function eventually(check: () => boolean): Promise<void> {
+  while (!check()) await new Promise((r) => setTimeout(r, 1));
+}
+
 describe("BatteryMonitor", () => {
   it("shows the battery level in the slot and restores the original light on stop", async () => {
     const pad = new FakePad();
@@ -137,7 +152,7 @@ describe("BatteryMonitor", () => {
     const run = start([pad]);
 
     await run.until(lightIs("medium"));
-    expect(pad.slot()).toEqual(slotWith(pad, indicators.medium.animation));
+    expect(pad.slot()).toEqual(slotWith(pad, INDICATORS.medium.animation));
     expect(pad.light[LightOffset.ConfigIndex]).toBe(SLOT);
 
     await run.finish();
@@ -154,7 +169,7 @@ describe("BatteryMonitor", () => {
     await run.until(lightIs("high"));
     pad.charging = true;
     await run.until(lightIs("charging"));
-    expect(pad.slot()).toEqual(slotWith(pad, indicators.charging.animation));
+    expect(pad.slot()).toEqual(slotWith(pad, INDICATORS.charging.animation));
     await run.finish();
   });
 
@@ -163,7 +178,24 @@ describe("BatteryMonitor", () => {
     pad.percent = 100;
     const run = start([pad], { connection: "cable" });
     await run.until(lightIs("charged"));
-    expect(pad.slot()).toEqual(slotWith(pad, indicators.charged.animation));
+    expect(pad.slot()).toEqual(slotWith(pad, INDICATORS.charged.animation));
+    await run.finish();
+  });
+
+  it("steps the critical alert and resumes the loop when the level changes", async () => {
+    const pad = new FakePad();
+    pad.percent = 5;
+    const run = start([pad], { indicators: STEPPED });
+    await run.until(lightIs("critical"));
+    await eventually(() => pad.lightStatus.length >= 7);
+    expect(pad.lightStatus.slice(0, 7)).toEqual(["play", 0, 1, 2, 0, 1, 2]);
+
+    pad.percent = 40;
+    await run.until(lightIs("medium"));
+    const sent = pad.lightStatus.length;
+    await new Promise((r) => setTimeout(r, 20));
+    expect(pad.lightStatus.length).toBe(sent);
+    expect(pad.lightStatus.at(-1)).toBe("play");
     await run.finish();
   });
 
@@ -176,7 +208,7 @@ describe("BatteryMonitor", () => {
     await run.monitor.setPaused(true);
     expect(pad.slot()).toEqual(original);
     await run.monitor.setPaused(false);
-    expect(pad.slot()).toEqual(slotWith(pad, indicators.medium.animation));
+    expect(pad.slot()).toEqual(slotWith(pad, INDICATORS.medium.animation));
     await run.finish();
   });
 
