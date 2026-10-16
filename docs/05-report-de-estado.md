@@ -1,6 +1,6 @@
 # 05 · Report de estado `0x12`
 
-64 bytes pela coleção `0xFFF0`, enquanto houver heartbeat; ~200 por segundo pelo dongle, independente da taxa de report do perfil (250 e 1000 Hz testados). Fontes: `ie` (`main.app.js:825`), `Us.push` (`main.app.js:7986`), `parseGamepadState` (`main.app.js:8276`). Byte 0 = report ID, como no node-hid.
+64 bytes pela coleção `0xFFF0`, enquanto houver heartbeat; ~200 por segundo pelo dongle (independente da taxa de report do perfil: 250 e 1000 Hz testados), 250 por segundo no cabo (perfil a 250 Hz). Fontes: `ie` (`main.app.js:825`), `Us.push` (`main.app.js:7986`), `parseGamepadState` (`main.app.js:8276`). Byte 0 = report ID, como no node-hid.
 
 | Byte | Bits | Campo | Nome no app |
 |---|---|---|---|
@@ -14,13 +14,13 @@
 | 6 | 6 / 7 | LS / RS (clique) | L3 / R3 |
 | 7 | 0 / 1 | Home / Capture | PS / Camera |
 | 8, 9 | | LT, RT analógicos 0–255 | |
-| 10 | | não mapeado (`0x20` nas capturas) | |
+| 10 | | não mapeado (`0x20` pelo dongle, `0xE7` no cabo) | |
 | 11 | | contador da IMU, 8 bits; ~780/s (3–4 por report), dá a volta em 255 | |
 | 12 | | não mapeado (sempre `0`) | |
 | 13–18 | | **giroscópio** X, Y, Z: int16 LE ([IMU](#imu)) | |
 | 19–24 | | **acelerômetro** X, Y, Z: int16 LE ([IMU](#imu)) | |
 | 25–34 | | não mapeado | |
-| 35 | | carregando = 1 | `chargeState` |
+| 35 | | carregando = 1 (✅ no cabo) | `chargeState` |
 | 36 | | bateria % | `batteryLevel` |
 | 37 | | animação de luz ativa | `ConfigIndex` |
 | 38–40 | | cor Home | |

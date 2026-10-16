@@ -61,7 +61,7 @@ tools/             prepare-analysis.sh → analysis/ (fora do git)
 
 ## Validação no hardware
 
-Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
+Windows, controle com firmware 3.4.6: dongle `0x100B` (1.2.1) e cabo `0x1053`. Bluetooth fora do escopo.
 
 | | |
 |---|---|
@@ -78,7 +78,7 @@ Dongle `0x100B`, Windows, firmware 3.4.6 / dongle 1.2.1.
 | Macro em L4: gravada pela lib e gravada pelo controle (`0F 16`) | ✅ |
 | Macro: Single Press, Long Press, loop | ✅ |
 | Macro: R4, comando de parar gravação | pendente |
-| Cabo, Bluetooth | pendente |
+| Cabo (`0x1053`): firmware, perfis, `0x12`, carregamento, vibração, LED | ✅ |
 
 ---
 
