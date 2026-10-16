@@ -50,7 +50,7 @@ button.onclick = async () => {
 | Grupo | Método | Equivalente no app |
 |---|---|---|
 | Sessão | `start({ heartbeatMs, testMode })`, `stopHeartbeat()`, `close()` | heartbeat 1 s |
-| Eventos | `onState`, `nextState`, `onProfileChanged`, `onRaw` | `0x12`, `0F 0F` |
+| Eventos | `onState`, `nextState`, `onProfileChanged`, `onRaw`, `onDisconnect`, `isConnected` | `0x12`, `0F 0F` |
 | Info | `readFirmwareVersion()`, `readCurrentProfile()` | `0F 09`, `0F 0B` |
 | Perfis de jogo | `switchProfile(1..4 \| "Shift")` | `reqSwitchProfile` |
 | | `readGameProfile`, `writeGameProfile`, `updateGameProfile` | `saveProfile` |
@@ -89,7 +89,7 @@ button.onclick = async () => {
 | `npx tsx examples/lights.ts slot 2` | troca a animação ativa |
 | `npx tsx examples/lights.ts show` | imprime o perfil de luz |
 | `npx tsx examples/vibrate.ts` | sequência de vibração |
-| `npx tsx examples/battery-led.ts` | Home muda de cor com a bateria (porte do script Python) |
+| `npx tsx examples/battery-led/index.ts [--slot 1-4] [--zone Home]` | indicador de bateria num LED: reconecta sozinho, só grava quando a faixa muda, devolve a luz ao sair |
 | `npx tsx examples/dump-profiles.ts` | salva todos os perfis + firmware em JSON |
 
 ## Fora da lib
