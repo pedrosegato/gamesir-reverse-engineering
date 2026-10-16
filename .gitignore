@@ -1,10 +1,11 @@
 # Dependências e build
 node_modules/
-!decompiled/node_modules/
 dist/
-!decompiled/dist/
 *.tsbuildinfo
 coverage/
+
+# Código da GameSir: extraído localmente, nunca versionado
+decompiled/
 
 # Saída gerada por tools/prepare-analysis.sh
 analysis/

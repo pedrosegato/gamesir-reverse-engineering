@@ -5,15 +5,19 @@
 | | |
 |---|---|
 | App | GameSir Connect 1.16.7 (Electron), autor *Guangzhou Chicken Run Network Technology Co., Ltd* |
-| Extração | `app.asar` → `decompiled/` |
+| Extração | `app.asar` → `decompiled/` (local, fora do git: o código é da GameSir) |
 | `dist/electron/main.js` | 944 KB, 1 linha, webpack 4 — toda a comunicação HID |
 | `dist/electron/renderer.js` | 5,1 MB, 21 linhas, Vue 2 + Vuex — interface |
 | Ferramentas | Node 22, Prettier 3.8.1; no hardware, os exemplos da lib (`lib/examples/`) |
 
 ## Preparação
 
+O repositório não inclui o app. Para reproduzir as referências `arquivo:linha`:
+
 ```bash
-./tools/prepare-analysis.sh
+# app.asar fica em resources/ da instalação do GameSir Connect 1.16.7
+npx --yes @electron/asar extract "<instalação>/resources/app.asar" decompiled
+./tools/prepare-analysis.sh decompiled
 ```
 
 | Saída (`analysis/`, fora do git) | Conteúdo |
