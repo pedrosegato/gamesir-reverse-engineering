@@ -55,3 +55,13 @@ export class ByteWriter {
     return Uint8Array.from(this.out);
   }
 }
+
+export function diffRange(a: ArrayLike<number>, b: ArrayLike<number>): { start: number; end: number } | null {
+  if (a.length !== b.length || a.length === 0) return { start: 0, end: b.length - 1 };
+  let start = 0;
+  while (start < a.length && a[start] === b[start]) start++;
+  if (start === a.length) return null;
+  let end = a.length - 1;
+  while (a[end] === b[end]) end--;
+  return { start, end };
+}

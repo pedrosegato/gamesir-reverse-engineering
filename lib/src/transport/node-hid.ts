@@ -1,22 +1,24 @@
 import HID from "node-hid";
-import { CONFIG_USAGE_PAGE, CYCLONE2_PIDS, VENDOR_ID } from "../constants.js";
+import { CONFIG_USAGE_PAGE, VENDOR_ID } from "../core/constants.js";
+import { type ControllerModel, modelForPid } from "../core/model.js";
+import { MODELS } from "../models/index.js";
 import type { DeviceInfo, HidTransport } from "./types.js";
 
-export async function findCyclone2(): Promise<DeviceInfo[]> {
-  const all = await HID.devicesAsync();
-  return all
-    .filter(
-      (d) =>
-        d.vendorId === VENDOR_ID && CYCLONE2_PIDS.includes(d.productId) && d.usagePage === CONFIG_USAGE_PAGE && d.path,
-    )
-    .map((d) => ({
-      vendorId: d.vendorId,
-      productId: d.productId,
-      path: d.path,
-      product: d.product,
-      usagePage: d.usagePage,
-      interface: d.interface,
-    }));
+export interface FoundController extends DeviceInfo {
+  path: string;
+  model: ControllerModel;
+}
+
+export async function findControllers(models: readonly ControllerModel[] = MODELS): Promise<FoundController[]> {
+  const found: FoundController[] = [];
+  for (const d of await HID.devicesAsync()) {
+    if (d.vendorId !== VENDOR_ID || d.usagePage !== CONFIG_USAGE_PAGE || !d.path) continue;
+    const model = modelForPid(d.productId, models);
+    if (!model) continue;
+    const { vendorId, productId, path, product, usagePage, interface: iface } = d;
+    found.push({ vendorId, productId, path, product, usagePage, interface: iface, model });
+  }
+  return found;
 }
 
 export class NodeHidTransport implements HidTransport {

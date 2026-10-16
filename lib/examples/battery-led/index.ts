@@ -3,13 +3,13 @@ import { parseArgs } from "node:util";
 import {
   type Animation,
   Cyclone2,
-  CyclonePid,
-  type GamepadState,
+  Cyclone2Pid,
+  type Cyclone2State,
   LED_ZONES,
   type LedZone,
   USER_ANIMATION_COUNT,
 } from "../../src/index.js";
-import { findCyclone2, NodeHidTransport } from "../../src/transport/node-hid.js";
+import { findControllers, NodeHidTransport } from "../../src/transport/node-hid.js";
 import { indicatorsFor } from "./indicators.js";
 import { type BatteryStatus, classify, type IndicatorKey, indicatorKey } from "./status.js";
 
@@ -17,10 +17,10 @@ const RECONNECT_MS = 2000;
 const SILENCE_MS = 5000;
 
 const CONNECTION: Partial<Record<number, string>> = {
-  [CyclonePid.Wired]: "cabo",
-  [CyclonePid.WiredAdc]: "cabo",
-  [CyclonePid.Wireless]: "sem fio",
-  [CyclonePid.WirelessDongle]: "dongle",
+  [Cyclone2Pid.Wired]: "cabo",
+  [Cyclone2Pid.WiredAdc]: "cabo",
+  [Cyclone2Pid.Wireless]: "sem fio",
+  [Cyclone2Pid.WirelessDongle]: "dongle",
 };
 
 interface Options {
@@ -68,7 +68,7 @@ function describe(status: BatteryStatus): string {
 async function waitForController(signal: AbortSignal): Promise<Cyclone2 | null> {
   let announced = false;
   while (!signal.aborted) {
-    const [info] = await findCyclone2();
+    const [info] = await findControllers();
     if (info?.path) {
       try {
         const pad = new Cyclone2(await NodeHidTransport.open(info.path));
@@ -95,7 +95,7 @@ async function runSession(pad: Cyclone2, signal: AbortSignal): Promise<void> {
 
   let status: BatteryStatus | undefined;
   let requested: IndicatorKey | undefined;
-  let lastSample: Pick<GamepadState, "batteryLevel" | "chargeState"> | undefined;
+  let lastSample: Pick<Cyclone2State, "batteryLevel" | "chargeState"> | undefined;
   let writes: Promise<unknown> = Promise.resolve();
 
   const show = (key: IndicatorKey) => {

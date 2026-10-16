@@ -1,8 +1,11 @@
 import HID from "node-hid";
 import {
   CONFIG_USAGE_PAGE,
-  CYCLONE2_PIDS,
   DONGLE_IDLE_PID,
+  GAME_PROFILE_SIZE,
+  LIGHT_PROFILE_SIZE,
+  MODELS,
+  modelForPid,
   protocol as P,
   Profile,
   STATE_REPORT_ID,
@@ -21,11 +24,12 @@ const hex4 = (n?: number) => `0x${(n ?? 0).toString(16).padStart(4, "0")}`;
 const devices = (await HID.devicesAsync()).filter((d) => d.vendorId === VENDOR_ID);
 console.log("coleções GameSir (VID 0x3537):");
 for (const [i, d] of devices.entries()) {
-  const known = CYCLONE2_PIDS.includes(d.productId)
-    ? ""
+  const model = modelForPid(d.productId, MODELS);
+  const known = model
+    ? ` (${model.name})`
     : d.productId === DONGLE_IDLE_PID
       ? " (dongle sem controle)"
-      : " (PID fora da tabela do app)";
+      : " (PID desconhecido)";
   console.log(
     `  [${i}] PID ${hex4(d.productId)}${known} interface ${d.interface} usagePage ${hex4(d.usagePage)} usage ${hex4(d.usage)}`,
   );
@@ -58,8 +62,8 @@ const probes: [string, Uint8Array][] = [
   ["heartbeat", P.heartbeat()],
   ["ReadFwVersion", P.readFwVersion()],
   ["ReadCurrentProfile", P.readCurrentProfile()],
-  ["ReadProfile 32 bloco 0", P.readProfile(Profile.Light)[0]],
-  ["ReadProfile 1 bloco 0", P.readProfile(Profile.P1)[0]],
+  ["ReadProfile 32 bloco 0", P.readProfile(Profile.Light, LIGHT_PROFILE_SIZE)[0]],
+  ["ReadProfile 1 bloco 0", P.readProfile(Profile.P1, GAME_PROFILE_SIZE)[0]],
 ];
 
 for (const target of opened.filter((o) => o.config)) {

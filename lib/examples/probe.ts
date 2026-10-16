@@ -16,7 +16,7 @@ let pendingRestore: GameProfile | null = await pad.readGameProfile(profile);
 let recording = false;
 
 async function restore(): Promise<void> {
-  if (recording) await pad.setMacroRecording("FL1", protocol.MacroRecordState.Cancel);
+  if (recording) await pad.setMacroRecording("L4", protocol.MacroRecordState.Cancel);
   recording = false;
   if (!pendingRestore) return;
   await pad.readProfile(profile);
@@ -61,10 +61,10 @@ async function recordThen(action: "Stop" | "Cancel"): Promise<void> {
   );
 
   recording = true;
-  await pad.setMacroRecording("FL1", protocol.MacroRecordState.Start);
+  await pad.setMacroRecording("L4", protocol.MacroRecordState.Start);
   await sleep(RECORD_MS);
   console.log(`${at()}  enviando ${action} (0F 16 01 ${protocol.MacroRecordState[action]})`);
-  await pad.setMacroRecording("FL1", protocol.MacroRecordState[action]);
+  await pad.setMacroRecording("L4", protocol.MacroRecordState[action]);
   recording = false;
   await sleep(2500);
   offState();

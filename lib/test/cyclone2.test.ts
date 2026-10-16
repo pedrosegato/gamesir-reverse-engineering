@@ -166,6 +166,12 @@ describe("Cyclone2", () => {
     expect((await disconnected)?.message).toBe("dispositivo removido");
   });
 
+  it("recusa escrita além do tamanho do perfil no modelo", async () => {
+    const pad = new Cyclone2(new FakeController());
+    await expect(pad.writeProfile(Profile.Light, new Array(70).fill(0), 600)).rejects.toThrow(RangeError);
+    await expect(pad.readProfile(7)).rejects.toThrow("Cyclone 2 não tem o perfil 7");
+  });
+
   it("remapeia um botão no perfil de jogo", async () => {
     const fake = new FakeController();
     const pad = new Cyclone2(fake);

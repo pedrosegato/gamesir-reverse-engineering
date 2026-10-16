@@ -1,27 +1,12 @@
 export const VENDOR_ID = 0x3537;
 export const CONFIG_USAGE_PAGE = 0xfff0;
 
-export const CyclonePid = {
-  Wired: 0x101d,
-  Wireless: 0x102a,
-  WiredAdc: 0x1053,
-  WirelessDongle: 0x100b,
-} as const;
-
-export const CYCLONE2_PIDS: readonly number[] = Object.values(CyclonePid);
-
-/** Dongle sem controle conectado; não responde a comandos. */
-export const DONGLE_IDLE_PID = 0x0575;
-
 export const OUTPUT_REPORT_ID = 0x0f;
 export const RESPONSE_REPORT_ID = 0x10;
 export const STATE_REPORT_ID = 0x12;
 
 export const PACKET_SIZE = 64;
 export const CHUNK_SIZE = 58;
-
-export const GAME_PROFILE_SIZE = 680;
-export const LIGHT_PROFILE_SIZE = 635;
 
 export const Profile = {
   P1: 1,
@@ -32,6 +17,8 @@ export const Profile = {
   Light: 32,
   Current: 48,
 } as const;
+
+export type GameProfileNumber = 1 | 2 | 3 | 4 | 5;
 
 export const Cmd = {
   EnterProfileConfig: 0x01,
@@ -71,6 +58,3 @@ export function cmdName(cmd: number): string {
   const entry = Object.entries(Cmd).find(([, v]) => v === cmd);
   return entry ? entry[0] : `Unknown_0x${cmd.toString(16).padStart(2, "0")}`;
 }
-
-export const LED_ZONES = ["Home", "LowerLeft", "LowerRight", "UpperLeft", "UpperRight"] as const;
-export type LedZone = (typeof LED_ZONES)[number];

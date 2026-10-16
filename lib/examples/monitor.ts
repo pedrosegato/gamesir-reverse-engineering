@@ -1,4 +1,4 @@
-import type { GamepadState } from "../src/index.js";
+import type { Cyclone2State } from "../src/index.js";
 import { openFirstCyclone2 } from "./_open.js";
 
 const pad = await openFirstCyclone2();
@@ -6,7 +6,7 @@ const pad = await openFirstCyclone2();
 const rgb = ({ r, g, b }: { r: number; g: number; b: number }) => `${r},${g},${b}`;
 const axis = (v: number) => v.toFixed(2).padStart(5);
 
-function describe(s: GamepadState): string {
+function describe(s: Cyclone2State): string {
   const pressed = Object.entries(s.buttons)
     .filter(([, v]) => v)
     .map(([k]) => k)

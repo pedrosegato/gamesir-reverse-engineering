@@ -1,5 +1,6 @@
-import type { Rgb } from "./color.js";
-import { LED_ZONES, type LedZone, STATE_REPORT_ID } from "./constants.js";
+import type { Rgb } from "../../core/color.js";
+import { STATE_REPORT_ID } from "../../core/constants.js";
+import { LED_ZONES, type LedZone, type MacroButton } from "./constants.js";
 
 const Offset = {
   Inputs: 1,
@@ -86,7 +87,7 @@ export interface Inputs {
 }
 
 /** Os campos de `Inputs` no topo já passaram pelo mapeamento do perfil ativo. */
-export interface GamepadState extends Inputs {
+export interface Cyclone2State extends Inputs {
   physical: Inputs;
   imu: Imu;
   chargeState: number;
@@ -94,7 +95,7 @@ export interface GamepadState extends Inputs {
   lightConfigIndex: number;
   leds: Record<LedZone, Rgb>;
   macroRecording: boolean;
-  macroRecordKey: "FL1" | "FR1" | null;
+  macroRecordKey: MacroButton | null;
   raw: Uint8Array;
 }
 
@@ -143,7 +144,7 @@ function parseInputs(d: Uint8Array, base: number): Inputs {
   };
 }
 
-export function parseState(data: ArrayLike<number>): GamepadState {
+export function parseState(data: ArrayLike<number>): Cyclone2State {
   if (!isStateReport(data)) throw new Error("não é um report de estado 0x12 completo");
   const d = Uint8Array.from(data);
   const macro = d[Offset.MacroRecord];
@@ -169,7 +170,7 @@ export function parseState(data: ArrayLike<number>): GamepadState {
     lightConfigIndex: d[Offset.LightConfigIndex],
     leds,
     macroRecording: bit(macro, 0) || bit(macro, 1),
-    macroRecordKey: bit(macro, 4) ? "FL1" : bit(macro, 5) ? "FR1" : null,
+    macroRecordKey: bit(macro, 4) ? "L4" : bit(macro, 5) ? "R4" : null,
     raw: d,
   };
 }

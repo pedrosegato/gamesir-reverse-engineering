@@ -1,4 +1,4 @@
-import { ByteReader, ByteWriter } from "./binary.js";
+import { ByteReader, ByteWriter } from "../../core/binary.js";
 import { GAME_PROFILE_SIZE } from "./constants.js";
 
 const NAME_SIZE = 32;

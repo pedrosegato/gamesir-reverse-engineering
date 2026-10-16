@@ -1,14 +1,4 @@
-import {
-  CHUNK_SIZE,
-  Cmd,
-  cmdName,
-  GAME_PROFILE_SIZE,
-  LIGHT_PROFILE_SIZE,
-  OUTPUT_REPORT_ID,
-  PACKET_SIZE,
-  Profile,
-  STATE_REPORT_ID,
-} from "./constants.js";
+import { CHUNK_SIZE, Cmd, cmdName, OUTPUT_REPORT_ID, PACKET_SIZE, Profile, STATE_REPORT_ID } from "./constants.js";
 
 const VIBRATE_MAGIC = [0x66, 0x55];
 const QUICK_UPDATE_MAGIC = [0x55, 0x88];
@@ -22,10 +12,6 @@ export function packet(cmd: number, ...args: number[]): Uint8Array {
   const out = new Uint8Array(PACKET_SIZE);
   out.set(body);
   return out;
-}
-
-export function profileSize(profileNum: number): number {
-  return profileNum === Profile.Light ? LIGHT_PROFILE_SIZE : GAME_PROFILE_SIZE;
 }
 
 function* chunks(offset: number, length: number): Generator<{ offset: number; size: number; index: number }> {
@@ -45,14 +31,13 @@ export const readCurrentProfile = () => packet(Cmd.ReadCurrentProfile);
 export const switchProfile = (profileNum: number | "Shift") =>
   packet(Cmd.SwitchProfile, profileNum === "Shift" ? Profile.Shift : profileNum);
 
-export function readProfile(profileNum: number): Uint8Array[] {
-  return [...chunks(0, profileSize(profileNum))].map(({ offset, size }) =>
+export function readProfile(profileNum: number, profileSize: number): Uint8Array[] {
+  return [...chunks(0, profileSize)].map(({ offset, size }) =>
     packet(Cmd.ReadProfile, profileNum, hi(offset), lo(offset), size),
   );
 }
 
 export function writeProfile(profileNum: number, data: ArrayLike<number>, offset = 0): Uint8Array[] {
-  if (offset + data.length > profileSize(profileNum)) throw new RangeError("escrita passa do fim do perfil");
   const bytes = Array.from(data);
   return [...chunks(offset, bytes.length)].map(({ offset: off, size, index }) =>
     packet(Cmd.WriteProfile, profileNum, hi(off), lo(off), size, ...bytes.slice(index, index + size)),
@@ -73,11 +58,10 @@ export const readRgb = () => packet(Cmd.LightStatus);
 
 export const vibrate = (left: number, right: number) => packet(Cmd.Vibrate, ...VIBRATE_MAGIC, left, right);
 
-export const MacroKey = { FL1: 1, FR1: 2 } as const;
 export const MacroRecordState = { Cancel: 0, Start: 1, Stop: 2 } as const;
 export type MacroRecordState = (typeof MacroRecordState)[keyof typeof MacroRecordState];
-export const setMacroRecord = (button: keyof typeof MacroKey, state: MacroRecordState) =>
-  packet(Cmd.MacroRecord, MacroKey[button], state);
+/** `target` depende do modelo: índice do botão no Cyclone 2, código de tecla nos outros. */
+export const setMacroRecord = (target: number, state: MacroRecordState) => packet(Cmd.MacroRecord, target, state);
 
 export const setCalibrationState = (state: number) => packet(Cmd.Calibration, state);
 

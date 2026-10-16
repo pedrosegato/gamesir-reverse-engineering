@@ -50,7 +50,7 @@ let pendingRestore: GameProfile | null = null;
 let recording = false;
 
 async function restore(): Promise<void> {
-  if (recording) await pad.setMacroRecording("FL1", protocol.MacroRecordState.Cancel);
+  if (recording) await pad.setMacroRecording("L4", protocol.MacroRecordState.Cancel);
   recording = false;
   if (!pendingRestore) return;
   await pad.readProfile(profile);
@@ -136,10 +136,10 @@ async function testRecord(): Promise<void> {
   );
 
   recording = true;
-  await pad.setMacroRecording("FL1", protocol.MacroRecordState.Start);
+  await pad.setMacroRecording("L4", protocol.MacroRecordState.Start);
   console.log(`gravando macro no L4 por ${RECORD_SECONDS} s: aperte A, B e X, um de cada vez.`);
   await watch(RECORD_SECONDS);
-  await pad.setMacroRecording("FL1", protocol.MacroRecordState.Stop);
+  await pad.setMacroRecording("L4", protocol.MacroRecordState.Stop);
   recording = false;
   await sleep(1000);
   offChange();

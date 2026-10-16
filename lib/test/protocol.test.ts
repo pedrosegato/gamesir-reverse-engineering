@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Cmd, protocol as P, Profile } from "../src/index.js";
+import { Cmd, LIGHT_PROFILE_SIZE, protocol as P, Profile } from "../src/index.js";
 
 const head = (pkt: Uint8Array, n = 8) => Array.from(pkt.slice(0, n));
 
@@ -19,12 +19,12 @@ describe("pacotes", () => {
     expect(head(P.switchProfile("Shift"), 3)).toEqual([15, 7, 5]);
     expect(head(P.vibrate(200, 100), 6)).toEqual([15, 32, 102, 85, 200, 100]);
     expect(head(P.setLightStatus(true, 3), 4)).toEqual([15, 13, 1, 3]);
-    expect(head(P.setMacroRecord("FR1", 1), 4)).toEqual([15, 22, 2, 1]);
+    expect(head(P.setMacroRecord(2, 1), 4)).toEqual([15, 22, 2, 1]);
     expect(head(P.quickUpdate(), 4)).toEqual([15, 23, 85, 136]);
   });
 
   it("leitura do perfil de luz em 11 blocos de até 58 bytes", () => {
-    const pkts = P.readProfile(Profile.Light);
+    const pkts = P.readProfile(Profile.Light, LIGHT_PROFILE_SIZE);
     expect(pkts).toHaveLength(Math.ceil(635 / 58));
     expect(head(pkts[0], 6)).toEqual([15, 4, 32, 0, 0, 58]);
     expect(head(pkts[4], 6)).toEqual([15, 4, 32, 0, 232, 58]);
@@ -37,7 +37,6 @@ describe("pacotes", () => {
     expect(pkts).toHaveLength(2);
     expect(head(pkts[0], 7)).toEqual([15, 3, 1, 2, 88, 58, 0]);
     expect(head(pkts[1], 7)).toEqual([15, 3, 1, 2, 146, 12, 58]);
-    expect(() => P.writeProfile(Profile.Light, data, 600)).toThrow();
   });
 
   it("interpreta respostas", () => {

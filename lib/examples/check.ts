@@ -1,12 +1,12 @@
 import HID from "node-hid";
-import { Cyclone2, CyclonePid, DONGLE_IDLE_PID, type GamepadState, Profile, VENDOR_ID } from "../src/index.js";
-import { findCyclone2, NodeHidTransport } from "../src/transport/node-hid.js";
+import { Cyclone2, Cyclone2Pid, type Cyclone2State, DONGLE_IDLE_PID, Profile, VENDOR_ID } from "../src/index.js";
+import { findControllers, NodeHidTransport } from "../src/transport/node-hid.js";
 
 const MODES: Record<number, string> = {
-  [CyclonePid.Wired]: "cabo",
-  [CyclonePid.WiredAdc]: "cabo (ADC)",
-  [CyclonePid.Wireless]: "sem fio",
-  [CyclonePid.WirelessDongle]: "dongle",
+  [Cyclone2Pid.Wired]: "cabo",
+  [Cyclone2Pid.WiredAdc]: "cabo (ADC)",
+  [Cyclone2Pid.Wireless]: "sem fio",
+  [Cyclone2Pid.WirelessDongle]: "dongle",
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -37,7 +37,7 @@ async function statesPerSecond(pad: Cyclone2, ms = 2000): Promise<number> {
 const idleDongle = (await HID.devicesAsync()).some((d) => d.vendorId === VENDOR_ID && d.productId === DONGLE_IDLE_PID);
 if (idleDongle) console.log("dongle plugado sem controle conectado a ele (PID 0x0575)");
 
-const found = await findCyclone2();
+const found = await findControllers();
 if (found.length === 0) {
   await listCandidates();
   process.exit(1);
@@ -58,7 +58,7 @@ console.log(
 console.log(`perfil ativo: ${await pad.readCurrentProfile()}`);
 
 console.log(`reports 0x12/s: ${await statesPerSecond(pad)}`);
-const s = pad.lastState as GamepadState;
+const s = pad.lastState as Cyclone2State;
 console.log(
   `bateria ${s.batteryLevel}%, carregando ${s.chargeState}, animação ${s.lightConfigIndex}, Home ${rgb(s.leds.Home)}`,
 );
@@ -75,9 +75,9 @@ await pad.vibrate(160, 160, 300);
 const light = await pad.readLightProfile();
 await pad.setStaticColor({ Home: "#ff0000" });
 await sleep(1500);
-console.log(`Home vermelho → report mostra ${rgb((pad.lastState as GamepadState).leds.Home)}`);
+console.log(`Home vermelho → report mostra ${rgb((pad.lastState as Cyclone2State).leds.Home)}`);
 await pad.writeLightProfile(light);
 await sleep(1500);
-console.log(`luz restaurada → report mostra ${rgb((pad.lastState as GamepadState).leds.Home)}`);
+console.log(`luz restaurada → report mostra ${rgb((pad.lastState as Cyclone2State).leds.Home)}`);
 
 await pad.close();

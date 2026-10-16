@@ -1,24 +1,31 @@
-import { CONFIG_USAGE_PAGE, CYCLONE2_PIDS, VENDOR_ID } from "../constants.js";
+import { CONFIG_USAGE_PAGE, VENDOR_ID } from "../core/constants.js";
+import { type ControllerModel, modelForPid } from "../core/model.js";
+import { MODELS } from "../models/index.js";
 import type { HidTransport } from "./types.js";
 
-export const CYCLONE2_FILTERS: HIDDeviceFilter[] = CYCLONE2_PIDS.map((productId) => ({
-  vendorId: VENDOR_ID,
-  productId,
-  usagePage: CONFIG_USAGE_PAGE,
-}));
-
-/** Precisa ser chamado a partir de um gesto do usuário (clique, tecla). */
-export async function requestCyclone2(): Promise<WebHidTransport | null> {
-  const [device] = await navigator.hid.requestDevice({ filters: CYCLONE2_FILTERS });
-  return device ? WebHidTransport.open(device) : null;
+export interface OpenedController {
+  transport: WebHidTransport;
+  model: ControllerModel;
 }
 
-export async function getAuthorizedCyclone2(): Promise<HIDDevice[]> {
+export const hidFilters = (models: readonly ControllerModel[] = MODELS): HIDDeviceFilter[] =>
+  models.flatMap((m) =>
+    Object.values(m.pids).map((productId) => ({ vendorId: VENDOR_ID, productId, usagePage: CONFIG_USAGE_PAGE })),
+  );
+
+/** Precisa ser chamado a partir de um gesto do usuário (clique, tecla). */
+export async function requestController(models: readonly ControllerModel[] = MODELS): Promise<OpenedController | null> {
+  const [device] = await navigator.hid.requestDevice({ filters: hidFilters(models) });
+  const model = device && modelForPid(device.productId, models);
+  return device && model ? { transport: await WebHidTransport.open(device), model } : null;
+}
+
+export async function getAuthorizedControllers(models: readonly ControllerModel[] = MODELS): Promise<HIDDevice[]> {
   const devices = await navigator.hid.getDevices();
   return devices.filter(
     (d) =>
       d.vendorId === VENDOR_ID &&
-      CYCLONE2_PIDS.includes(d.productId) &&
+      modelForPid(d.productId, models) !== undefined &&
       d.collections.some((c) => c.usagePage === CONFIG_USAGE_PAGE),
   );
 }
