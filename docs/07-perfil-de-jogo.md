@@ -37,7 +37,7 @@ UTF-8, completado com `00`. Bug do app: nome > 32 B é cortado em 31 e a imagem 
 | 43 | trava de diagonais do D-pad | bit 0 |
 | 44 | troca ABXY no XInput | bit 0 |
 | 45 | troca ABXY no Switch | bit 0 |
-| **46** | **taxa de report** | **0 = 250 Hz, 1 = 500 Hz, 2 = 1000 Hz**; não muda o ritmo do report `0x12` |
+| **46** | **taxa de report** | **0 = 250 Hz, 1 = 500 Hz, 2 = 1000 Hz**; no cabo o `0x12` segue essa taxa (1000 Hz → 1000/s); pelo dongle fica em ~200/s |
 | 47–63 | reservado | devolvido como lido |
 
 ## Botões (64–175)

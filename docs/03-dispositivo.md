@@ -42,7 +42,7 @@ Se o backend HID não reportar usage page, o app aceita qualquer interface com o
 
 | | App configura? |
 |---|---|
-| Cabo | sim ✅ mesmo protocolo; `0x12` a 250/s, `chargeState` = 1 |
+| Cabo | sim ✅ mesmo protocolo; `0x12` na taxa de report do perfil (250 ou 1000/s), `chargeState` = 1 |
 | Dongle 2.4 GHz | sim; o dongle repassa o protocolo |
 | Bluetooth | **não** |
 
