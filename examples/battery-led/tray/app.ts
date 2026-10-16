@@ -121,6 +121,13 @@ export async function runTray(): Promise<void> {
     { label: "Sair", onClick: () => void quit(), disabled: quitting },
   ];
 
-  const tray = new Tray({ name: NAME, tooltip: tooltip(), icon: IDLE, menu });
+  const tray = new Tray({
+    name: NAME,
+    tooltip: tooltip(),
+    icon: IDLE,
+    menu,
+    onError: (message) => log(`bandeja: ${message}`),
+  });
+  log(tray.added ? "ícone adicionado na bandeja" : "ícone ainda não adicionado; tentando de novo");
   const running = monitor.run(stop.signal).catch((error: Error) => log(`falha: ${error.stack ?? error.message}`));
 }

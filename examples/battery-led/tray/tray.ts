@@ -11,12 +11,14 @@ export interface TrayOptions {
   readonly tooltip: string;
   readonly icon: Rgb;
   readonly menu: () => readonly MenuEntry[];
+  readonly onError?: (message: string) => void;
 }
 
 const ICON_ID = 1;
 export const CALLBACK_MESSAGE = w.WM_APP + 1;
 /** O event loop do Node não espera na fila de mensagens do Win32, então ela é esvaziada periodicamente. */
 const PUMP_EVERY_MS = 100;
+const RETRY_ADD_MS = 3000;
 
 export class Tray {
   private readonly hwnd: w.Pointer;
@@ -27,7 +29,9 @@ export class Tray {
   private tooltip: string;
   private icon: w.Pointer | null;
   private menuRequested = false;
-  private readdRequested = false;
+  private nextAddAt = 0;
+  private lastError = "";
+  added = false;
 
   constructor(private readonly options: TrayOptions) {
     const instance = w.GetModuleHandleW(null);
@@ -52,7 +56,7 @@ export class Tray {
     this.taskbarCreated = w.RegisterWindowMessageW("TaskbarCreated");
     this.tooltip = options.tooltip;
     this.icon = this.iconFor(options.icon);
-    this.notify(w.NIM_ADD);
+    this.add();
     this.pumpTimer = setInterval(() => this.pump(), PUMP_EVERY_MS);
   }
 
@@ -61,16 +65,30 @@ export class Tray {
     if (tooltip === this.tooltip && icon === this.icon) return;
     this.tooltip = tooltip;
     this.icon = icon;
-    this.notify(w.NIM_MODIFY);
+    if (this.added && !this.notify(w.NIM_MODIFY)) this.report("NIM_MODIFY");
   }
 
   /** Só tira o ícone: a janela oculta e o callback dela ficam até o processo terminar. */
   remove(): void {
     clearInterval(this.pumpTimer);
-    this.notify(w.NIM_DELETE);
+    if (this.added) this.notify(w.NIM_DELETE);
   }
 
-  /** O Explorer apaga os ícones quando reinicia; antes do login completo, o NIM_ADD inicial também falha. */
+  /** O Explorer apaga os ícones quando reinicia; antes do login completo o NIM_ADD também falha e é repetido. */
+  private add(): void {
+    this.added = this.notify(w.NIM_ADD);
+    if (this.added) return;
+    this.report("NIM_ADD");
+    this.nextAddAt = Date.now() + RETRY_ADD_MS;
+  }
+
+  private report(operation: string): void {
+    const message = `${operation} falhou (erro ${w.GetLastError()}, ícone ${this.icon ? "ok" : "nulo"})`;
+    if (message === this.lastError) return;
+    this.lastError = message;
+    this.options.onError?.(message);
+  }
+
   private handle(hwnd: w.Pointer, message: number, wParam: number | bigint, lParam: number | bigint): number | bigint {
     if (message === CALLBACK_MESSAGE) {
       const event = Number(lParam) & 0xffff;
@@ -78,7 +96,7 @@ export class Tray {
       return 0;
     }
     if (message === this.taskbarCreated) {
-      this.readdRequested = true;
+      this.added = false;
       return 0;
     }
     return w.DefWindowProcW(hwnd, message, wParam, lParam);
@@ -89,10 +107,7 @@ export class Tray {
       w.TranslateMessage(this.msg);
       w.DispatchMessageW(this.msg);
     }
-    if (this.readdRequested) {
-      this.readdRequested = false;
-      this.notify(w.NIM_ADD);
-    }
+    if (!this.added && Date.now() >= this.nextAddAt) this.add();
     if (this.menuRequested) {
       this.menuRequested = false;
       this.showMenu();
@@ -147,8 +162,8 @@ export class Tray {
     return icon;
   }
 
-  private notify(message: number): void {
-    w.Shell_NotifyIconW(message, {
+  private notify(message: number): boolean {
+    const ok = w.Shell_NotifyIconW(message, {
       cbSize: w.STRUCT_SIZES.NOTIFYICONDATAW,
       hWnd: this.hwnd,
       uID: ICON_ID,
@@ -165,5 +180,6 @@ export class Tray {
       guidItem: { data1: 0, data2: 0, data3: 0, data4: [0, 0, 0, 0, 0, 0, 0, 0] },
       hBalloonIcon: null,
     });
+    return ok !== 0;
   }
 }

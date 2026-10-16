@@ -5,7 +5,7 @@ import { toRgb } from "gamesir-hid";
 import { findControllers } from "gamesir-hid/node";
 import { isAutostartEnabled, setAutostart } from "./autostart.js";
 import { CALLBACK_MESSAGE, Tray } from "./tray.js";
-import { STRUCT_SIZES, WM_RBUTTONUP } from "./win32.js";
+import { FindWindowW, STRUCT_SIZES, WM_RBUTTONUP } from "./win32.js";
 
 const WINDOW_NAME = "Cyclone2BatterySelfTest";
 const EXPECTED_SIZES = { MSG: 48, WNDCLASSEXW: 80, NOTIFYICONDATAW: 976 };
@@ -44,15 +44,18 @@ interface MenuResult {
   readonly chosen: boolean;
   readonly opened: number;
   readonly helper: string;
+  readonly added: boolean;
+  readonly trayErrors: readonly string[];
 }
 
 function chooseFromMenu(): Promise<MenuResult> {
   return new Promise((resolve) => {
     let opened = 0;
     let helper = "";
+    const trayErrors: string[] = [];
     const finish = (chosen: boolean) => {
       clearTimeout(timer);
-      resolve({ chosen, opened, helper: helper.trim() });
+      resolve({ chosen, opened, helper: helper.trim(), added: tray.added, trayErrors });
     };
     const timer = setTimeout(() => finish(false), MENU_TIMEOUT_MS);
     const tray = new Tray({
@@ -63,6 +66,7 @@ function chooseFromMenu(): Promise<MenuResult> {
         opened++;
         return [{ label: "status" }, "separator", { label: "último", onClick: () => finish(true) }];
       },
+      onError: (message) => trayErrors.push(message),
     });
     tray.update("self-test 2", toRgb("#00ff00"));
     const child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", CLICK_LAST_MENU_ITEM], {
@@ -90,7 +94,8 @@ export async function selfTest(output: string): Promise<boolean> {
   const sizesMatch = Object.entries(EXPECTED_SIZES).every(
     ([name, size]) => STRUCT_SIZES[name as keyof typeof STRUCT_SIZES] === size,
   );
-  const report: Record<string, unknown> = { sea: isSea(), sizes: STRUCT_SIZES, sizesMatch };
+  const taskbar = FindWindowW("Shell_TrayWnd", null) !== null;
+  const report: Record<string, unknown> = { sea: isSea(), sizes: STRUCT_SIZES, sizesMatch, taskbar };
   try {
     report.menu = await chooseFromMenu();
     report.controllers = (await findControllers()).length;
@@ -98,7 +103,8 @@ export async function selfTest(output: string): Promise<boolean> {
   } catch (error) {
     report.error = (error as Error).stack ?? String(error);
   }
-  report.ok = sizesMatch && (report.menu as MenuResult | undefined)?.chosen === true && report.autostart === true;
+  const menu = report.menu as MenuResult | undefined;
+  report.ok = sizesMatch && menu?.chosen === true && (menu.added || !taskbar) && report.autostart === true;
   writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`);
   return report.ok === true;
 }

@@ -127,6 +127,8 @@ const kernel32 = koffi.load("kernel32.dll");
 const shell32 = koffi.load("shell32.dll");
 const advapi32 = koffi.load("advapi32.dll");
 
+export const GetLastError: () => number = kernel32.func("uint32_t __stdcall GetLastError()");
+
 export const GetModuleHandleW: (name: string | null) => Pointer | null = kernel32.func(
   "HINSTANCE __stdcall GetModuleHandleW(const char16_t *name)",
 );
@@ -180,6 +182,10 @@ export const PostMessageW: (hwnd: Pointer, message: number, wParam: number, lPar
 
 export const RegisterWindowMessageW: (name: string) => number = user32.func(
   "uint32_t __stdcall RegisterWindowMessageW(const char16_t *name)",
+);
+
+export const FindWindowW: (className: string, windowName: string | null) => Pointer | null = user32.func(
+  "HWND __stdcall FindWindowW(const char16_t *className, const char16_t *windowName)",
 );
 
 export const CreatePopupMenu: () => Pointer | null = user32.func("HMENU __stdcall CreatePopupMenu()");
