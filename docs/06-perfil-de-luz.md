@@ -37,6 +37,10 @@ Fontes: codec `Ks` (`main.app.js:7923`), editor do C2 (`renderer.js:135161`, rot
 
 ### Zonas no frame
 
+![Tela de luzes do GameSir Connect com as zonas ① a ④](img/c2-luzes-app.png)
+
+*Tela de luzes do app com o controle conectado. ② (Home) aparece em `80,255,0`, a mesma cor lida no report `0x12`.*
+
 ⚠️ Ordem diferente do report `0x12` (`Home, LowerLeft, LowerRight, UpperLeft, UpperRight`). Fonte: `convertFrame` (`renderer.js:135365`), `updateRGB` (`renderer.js:135400`).
 
 | Slot | Bytes | Nome no app | No Cyclone 2 | Nº na UI |
@@ -45,10 +49,10 @@ Fontes: codec `Ks` (`main.app.js:7923`), editor do C2 (`renderer.js:135161`, rot
 | 1 | +3..+5 | `LowerRight` | lateral direita | 3 |
 | 2 | +6..+8 | `UpperLeft` | sem LED (UI não edita) | — |
 | 3 | +9..+11 | `Home` | botão Home | 2 |
-| 4 | +12..+14 | `UpperRight` | luz 4 | 4 |
+| 4 | +12..+14 | `UpperRight` | centro inferior, junto ao botão M (pela UI) | 4 |
 
 - Slot 3 = Home também confirmado pelo `gamesir_rgb_battery.pyw`.
-- Luz 4: o espelho ao vivo do app pinta essa cor em 4 barras de indicador de perfil (1–4). Posição física **não verificada**.
+- Luz 4: a UI aponta para o centro inferior, junto ao botão M; o espelho ao vivo pinta essa cor em 4 barras de indicador de perfil (1–4). Posição física **não verificada**.
 
 ## Presets
 
