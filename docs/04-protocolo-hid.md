@@ -1,107 +1,91 @@
 # 04 · Protocolo HID
 
-Todo o tráfego de configuração passa pela interface HID de **usage page `0xFFF0`** (vendor-defined) do Cyclone 2. Ver [03 · Dispositivo](03-dispositivo.md) para os PIDs.
+Coleção HID usage page `0xFFF0` ([03](03-dispositivo.md)). Fontes: builder `ps` (`main.app.js:7409`), parser `ks` (`main.app.js:7801`).
 
-## Formato do pacote
+## Pacote
 
-Os pacotes têm 64 bytes, nos dois sentidos:
+64 bytes nos dois sentidos.
 
 ```
-byte 0     report ID   0x0F nos comandos e respostas, 0x12 no report de estado
-byte 1     comando
-byte 2..   argumentos; o resto é preenchido com 0x00
+[0]   report ID   0x0F comandos/respostas · 0x12 estado
+[1]   comando
+[2…]  argumentos, resto 00
 ```
 
-O app chama `hid.write([15, 13])` com arrays curtos. O driver completa até o tamanho do report. A lib monta sempre os 64 bytes.
-
-No WebHID, o report ID vai separado: `sendReport(0x0F, bytes[1..])`, e o `inputreport` traz `reportId` à parte. O transporte da lib junta tudo no mesmo formato do node-hid.
+- O app escreve arrays curtos (`hid.write([15, 13])`); o driver completa. A lib sempre monta 64 bytes.
+- WebHID: report ID separado (`sendReport(0x0F, bytes[1..])`, `inputreport.reportId`). O transporte da lib normaliza para o formato do node-hid.
 
 ## Comandos
 
-Nas colunas de bytes, `n` é o número do perfil e `off` é o offset em big-endian (`offHi offLo`).
+`n` = perfil · `offH offL` = offset big-endian.
 
-| Cmd | Nome no app | Enviado | Resposta | Uso no Cyclone 2 |
+| Cmd | Nome no app | Enviado | Resposta | Função |
 |---|---|---|---|---|
-| `01` | EnterProfileConfig | `0F 01` | — | Não usado pelo proxy C2 |
-| `02` | ExitProfileConfig | `0F 02 save` | — | Não usado pelo proxy C2 |
-| `03` | WriteProfile | `0F 03 n offHi offLo len data[len]` | qualquer¹ | Grava até 58 bytes no perfil `n` |
-| `04` | ReadProfile | `0F 04 n offHi offLo len` | `05` | Lê até 58 bytes |
-| `06` | Ack | — | — | Confirmação genérica. `0F 06 01` = ocupado |
-| `07` | SwitchProfile | `0F 07 n` | qualquer¹ | Ativa o perfil de jogo 1..4 ou 5 (Shift) |
-| `08` | WriteProfileToEEPRom | — | — | Existe na tabela, mas nunca é enviado |
-| `09` | ReadFirmwareVersion | `0F 09` | `0A` | Versão do firmware e do dongle |
-| `0B` | ReadCurrentProfile | `0F 0B` | `0C` | Byte 2 da resposta = perfil ativo |
-| `0D` | SetLightStatus / ReadRGB | `0F 0D playing frame` | — | Toca a animação ou pausa num frame (base 1). Ver abaixo |
-| `0F` | ProfileChanged | — | do controle | `0F 0F n offHi offLo lenHi lenLo`: um trecho do perfil mudou |
-| `10` | RefreshProfile | `0F 10 n offHi offLo len` | `11` | Igual a ReadProfile. Usado depois de um ProfileChanged |
-| `16` | SetMacroStatus | `0F 16 key state` | — | Gravação de macro no controle. key 1 = L4, 2 = R4; state 0 cancela, 1 inicia, 2 para. O andamento aparece no byte 53 do report `0x12` |
-| `17` | QuickUpdate | `0F 17 55 88` | — | ⚠️ Entra em atualização de firmware |
-| `20` | Vibration | `0F 20 66 55 L R` | — | Motores esquerdo e direito |
-| `F2` | HeartBeat | `0F F2 mode` | — | Mantém o report `0x12` chegando. mode 1 = modo de teste |
-| `FC` | RequestToUpgrade | `0F FC` | — | ⚠️ Entra em modo DFU |
-| `FD` | SetCalibrationState | `0F FD state` | — | Existe, mas a UI nunca envia, e a resposta de calibração nunca é reconhecida pelo app (código morto). Efeito e valores **desconhecidos** |
+| `03` | WriteProfile | `0F 03 n offH offL len data…` | ¹ | grava até 58 B no perfil `n` |
+| `04` | ReadProfile | `0F 04 n offH offL len` | `0F 05 n offH offL len data…` | lê até 58 B |
+| `06` | Ack | — | | confirmação; `0F 06 01` = ocupado (app reenvia) |
+| `07` | SwitchProfile | `0F 07 n` | ¹ | perfil ativo: 1–4, 5 = Shift |
+| `09` | ReadFirmwareVersion | `0F 09` | `0F 0A …` | versões controle/dongle ([03](03-dispositivo.md)) |
+| `0B` | ReadCurrentProfile | `0F 0B` | `0F 0C n` | perfil ativo |
+| `0D` | SetLightStatus / ReadRGB | `0F 0D p f` | — | LED: ver abaixo |
+| `0F` | ProfileChanged | — | `0F 0F n offH offL lenH lenL` | controle avisa que um trecho mudou |
+| `10` | RefreshProfile | `0F 10 n offH offL len` | `0F 11 n offH offL len data…` | igual ao `04`; usado após `0F 0F` |
+| `16` | SetMacroStatus | `0F 16 k s` | — | gravação de macro no controle; `k` 1 = L4, 2 = R4; `s` 0 cancela, 1 inicia, 2 para; andamento no byte 53 do `0x12` |
+| `20` | Vibration | `0F 20 66 55 L R` | — | motores, `L`/`R` 0–255; `66 55` fixo |
+| `F2` | HeartBeat | `0F F2 m` | — | mantém o `0x12` chegando; `m` 1 = modo teste |
+| `17` | QuickUpdate | `0F 17 55 88` | — | ⚠️ entra em atualização de firmware |
+| `FC` | RequestToUpgrade | `0F FC` | — | ⚠️ entra em DFU |
+| `FD` | SetCalibrationState | `0F FD s` | — | UI nunca envia; resposta nunca reconhecida (código morto); efeito desconhecido |
 
-¹ O app não confere o tipo da resposta. Qualquer pacote `0x0F` que não seja notificação libera o próximo comando da fila. O tipo exato (provavelmente `06` Ack) ainda **não foi verificado** no hardware.
+¹ O app aceita qualquer resposta `0F` que não seja notificação. Tipo exato (provável `06`) não verificado.
 
-Opcodes que aparecem na tabela de respostas (`ks`), mas que o proxy do Cyclone 2 não envia: `12`/`13` WriteEEPRom, `14`/`15` ReadEEPRom, `F0`/`F1` Download e `F3`/`F4` ReadKeyStatus.
+Na tabela `ks`, sem uso pelo C2: `01`/`02` Enter/ExitProfileConfig, `08` WriteProfileToEEPRom, `12`–`15` EEPROM, `F0`/`F1` Download, `F3`/`F4` ReadKeyStatus.
 
-### Leitura e escrita de perfil
+## Perfis
 
-| Perfil `n` | Tamanho | Conteúdo |
+| `n` | Tamanho | Conteúdo |
 |---|---|---|
-| 1..4 | 680 bytes | Perfis de jogo. Ver [07 · Perfil de jogo](07-perfil-de-jogo.md) |
-| 5 | 680 bytes | Perfil "Shift" (camada secundária) |
-| 32 | 635 bytes | Perfil de luz. Ver [06 · Perfil de luz](06-perfil-de-luz.md) |
-| 48 | — | Só aparece em `ProfileChanged`, e indica que o perfil **ativo** mudou |
+| 1–4 | 680 | jogo ([07](07-perfil-de-jogo.md)) |
+| 5 | 680 | Shift (camada secundária) |
+| 32 | 635 | luz ([06](06-perfil-de-luz.md)) |
+| 48 | — | só em `0F 0F`: perfil ativo mudou |
 
-Os perfis trafegam em blocos de **58 bytes** (`64 − 6` de cabeçalho). Um perfil de luz completo ocupa 11 pacotes: 10 × 58 + 55.
+- Blocos de 58 B (64 − 6 de cabeçalho). Luz = 11 pacotes (10 × 58 + 55).
+- Leitura completa quando `offset + len` = tamanho do perfil.
+- O app escreve só o intervalo entre o primeiro e o último byte alterados. Não existe "salvar": cada `03` vale na hora.
 
-O app escreve sempre o **diff**: compara os bytes novos com a última cópia lida e envia só o intervalo entre o primeiro e o último byte diferentes. Não há comando de "salvar": o controle aplica cada `WriteProfile` na hora.
+## `0D`: LED
 
-Resposta de leitura:
-
-```
-0F 05 n offHi offLo len data[len]
-```
-
-O app considera a leitura completa quando `offset + len` é igual ao tamanho do perfil.
-
-### `0D`: SetLightStatus / ReadRGB
-
-O app usa o mesmo opcode para duas coisas:
-
-- `reqSetLightStatus {isPlaying, frameIndex}` → `0F 0D playing frame`. A tela de luzes usa isso para pré-visualizar: `0F 0D 01 01` toca a animação, e `0F 0D 00 n` pausa mostrando o frame `n`, **contado a partir de 1**.
-- `reqGetRgbState` → `0F 0D`, que no fio é igual a `0F 0D 00 00`. Na versão 1.16.7, nada na interface dispara esse evento.
-
-As cores acesas não chegam como resposta a esse comando. Elas vêm sempre no report `0x12`, nos bytes 38..52. O app repassa essas cores para o desenho do controle na tela a cada 6 reports.
-
-### Vibração
-
-```
-0F 20 66 55 L R
-```
-
-`66 55` é uma constante fixa. `L` e `R` são a intensidade de cada motor, de 0 a 255. O app desliga com `L = R = 0` depois do tempo pedido. Na tela "Try Grip Vibration", ele manda o valor analógico de LT/RT como `L`/`R`, a cada 10 ms, com duração de 100 ms.
-
-### Comandos que o app define mas nunca usa
-
-| Bytes | O que parece ser | Observação |
+| Origem no app | Bytes | Efeito |
 |---|---|---|
-| `0F 04 n 03 9D 07` | ler "device info" | É um ReadProfile no offset 925, **depois do fim** do perfil |
-| `0F 03 n 03 9E 06 <6 ASCII>` | gravar um "device id" | WriteProfile no offset 926. ⚠️ Não testar sem um bom motivo |
-| `0F 04 n 00 28 05` | ler áudio | Offset 40, tamanho 5. Não bate com o bloco de áudio do C2 (36–40) |
-| `0F 01` / `0F 02 save` | entrar/sair do modo de configuração | O proxy C2 não usa |
+| `reqSetLightStatus` | `0F 0D 01 01` | toca a animação |
+| | `0F 0D 00 f` | pausa no frame `f` (**base 1**) |
+| `reqGetRgbState` | `0F 0D` = `0F 0D 00 00` | nada na UI 1.16.7 dispara |
 
-## Fluxo típico
+Cores acesas vêm sempre no `0x12` (bytes 38–52); o app atualiza o desenho do controle a cada 6 reports.
 
-Respostas de escrita **não verificadas** no hardware.
+## Vibração
+
+- O app desliga com `0F 20 66 55 00 00` após `duration` (padrão 1 s).
+- "Try Grip Vibration": envia LT/RT analógicos como `L`/`R` a cada 10 ms, `duration` 100 ms.
+
+## Definidos e nunca usados
+
+| Bytes | Provável função | Obs. |
+|---|---|---|
+| `0F 04 n 03 9D 07` | ler "device info" | offset 925, depois do fim do perfil |
+| `0F 03 n 03 9E 06 <6 ASCII>` | gravar "device id" | offset 926 ⚠️ |
+| `0F 04 n 00 28 05` | ler áudio | offset 40; não bate com o áudio do C2 (36–40) |
+| `0F 01` / `0F 02 save` | entrar/sair de configuração | |
+
+## Sequência
 
 ```
-→ 0F F2 00                      heartbeat (repetir a cada 1 s)
-← 12 ...                        report de estado começa a chegar
-→ 0F 04 20 00 00 3A             lê o perfil de luz, bloco 0
-← 0F 05 20 00 00 3A <58 bytes>
-  ... (11 blocos)
-→ 0F 03 20 00 05 0F <15 bytes>  grava o frame 0 da animação 0 (offset 5)
-← 0F ?? ...                     confirmação
+→ 0F F2 00                      heartbeat, a cada 1 s
+← 12 …                          estado
+→ 0F 04 20 00 00 3A             lê luz, bloco 0
+← 0F 05 20 00 00 3A <58 B>
+  … 11 blocos
+→ 0F 03 20 00 05 0F <15 B>      grava frame 0 da animação 0 (offset 5)
+← 0F ?? …                       confirmação (não verificado)
 ```
