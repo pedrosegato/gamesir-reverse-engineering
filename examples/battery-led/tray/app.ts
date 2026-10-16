@@ -15,6 +15,8 @@ const INSTANCE_PIPE = "\\\\.\\pipe\\cyclone2-battery";
 const SLOT = 3;
 const IDLE = toRgb("#808080");
 const QUIT_GRACE_MS = 5000;
+/** The controller is searched for when Windows reports a HID device change; this interval is only a fallback. */
+const FALLBACK_SEARCH_MS = 30_000;
 
 const indicators = indicatorsFor("Home");
 
@@ -55,6 +57,7 @@ export async function runTray(): Promise<void> {
   const monitor = new BatteryMonitor({
     slot: SLOT,
     indicators,
+    timing: { searchEveryMs: FALLBACK_SEARCH_MS },
     onUpdate: (update) => {
       log(describeUpdate(update, indicators));
       shown = shownFor(update) ?? shown;
@@ -100,6 +103,7 @@ export async function runTray(): Promise<void> {
     icon: IDLE,
     menu,
     onError: (operation, code) => log(`bandeja: ${operation} falhou (erro ${code})`),
+    onDeviceChange: () => monitor.rescan(),
   });
   log(tray.added ? "ícone adicionado na bandeja" : "ícone ainda não adicionado; tentando de novo");
   const running = monitor.run(stop.signal).catch((error: Error) => log(`falha: ${error.stack ?? error.message}`));

@@ -12,6 +12,7 @@ export interface TrayOptions {
   readonly icon: Rgb;
   readonly menu: () => readonly MenuEntry[];
   readonly onError?: (operation: string, code: number) => void;
+  readonly onDeviceChange?: () => void;
 }
 
 const ICON_ID = 1;
@@ -32,6 +33,7 @@ export class Tray {
   private nextAddAt = 0;
   private lastError = "";
   added = false;
+  watchingDevices = false;
 
   constructor(private readonly options: TrayOptions) {
     const instance = w.GetModuleHandleW(null);
@@ -53,6 +55,7 @@ export class Tray {
     const hwnd = w.CreateWindowExW(0, options.name, options.name, 0, 0, 0, 0, 0, null, null, instance, null);
     if (!hwnd) throw new Error("CreateWindowExW failed");
     this.hwnd = hwnd;
+    if (options.onDeviceChange) this.watchingDevices = this.watchDevices();
     this.taskbarCreated = w.RegisterWindowMessageW("TaskbarCreated");
     this.tooltip = options.tooltip;
     this.icon = this.iconFor(options.icon);
@@ -82,6 +85,17 @@ export class Tray {
     this.nextAddAt = Date.now() + RETRY_ADD_MS;
   }
 
+  private watchDevices(): boolean {
+    const filter = {
+      dbcc_size: w.STRUCT_SIZES.DEV_BROADCAST_DEVICEINTERFACE_W,
+      dbcc_devicetype: w.DBT_DEVTYP_DEVICEINTERFACE,
+      dbcc_reserved: 0,
+      dbcc_classguid: w.GUID_DEVINTERFACE_HID,
+      dbcc_name: "",
+    };
+    return w.RegisterDeviceNotificationW(this.hwnd, filter, w.DEVICE_NOTIFY_WINDOW_HANDLE) !== null;
+  }
+
   private report(operation: string): void {
     const code = w.GetLastError();
     const key = `${operation}:${code}`;
@@ -95,6 +109,10 @@ export class Tray {
       const event = Number(lParam) & 0xffff;
       if (event === w.WM_LBUTTONUP || event === w.WM_RBUTTONUP) this.menuRequested = true;
       return 0;
+    }
+    if (message === w.WM_DEVICECHANGE) {
+      this.options.onDeviceChange?.();
+      return 1;
     }
     if (message === this.taskbarCreated) {
       this.added = false;

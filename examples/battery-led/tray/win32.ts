@@ -59,10 +59,19 @@ const NOTIFYICONDATAW = koffi.struct("NOTIFYICONDATAW", {
   hBalloonIcon: "HICON",
 });
 
+const DEV_BROADCAST_DEVICEINTERFACE_W = koffi.struct("DEV_BROADCAST_DEVICEINTERFACE_W", {
+  dbcc_size: "uint32_t",
+  dbcc_devicetype: "uint32_t",
+  dbcc_reserved: "uint32_t",
+  dbcc_classguid: GUID,
+  dbcc_name: koffi.array("char16_t", 1),
+});
+
 export const STRUCT_SIZES = {
   MSG: koffi.sizeof("MSG"),
   WNDCLASSEXW: WNDCLASSEXW.size,
   NOTIFYICONDATAW: NOTIFYICONDATAW.size,
+  DEV_BROADCAST_DEVICEINTERFACE_W: DEV_BROADCAST_DEVICEINTERFACE_W.size,
 };
 
 export interface Point {
@@ -109,7 +118,7 @@ export interface NotifyIconData {
   uVersion: number;
   szInfoTitle: string;
   dwInfoFlags: number;
-  guidItem: { data1: number; data2: number; data3: number; data4: number[] };
+  guidItem: Guid;
   hBalloonIcon: Pointer | null;
 }
 
@@ -228,6 +237,29 @@ export const CreateIconFromResourceEx: (
   "HICON __stdcall CreateIconFromResourceEx(const uint8_t *bits, uint32_t size, int icon, uint32_t version, int width, int height, uint32_t flags)",
 );
 
+export interface Guid {
+  data1: number;
+  data2: number;
+  data3: number;
+  data4: number[];
+}
+
+export interface DeviceInterfaceFilter {
+  dbcc_size: number;
+  dbcc_devicetype: number;
+  dbcc_reserved: number;
+  dbcc_classguid: Guid;
+  dbcc_name: string;
+}
+
+export const RegisterDeviceNotificationW: (
+  recipient: Pointer,
+  filter: DeviceInterfaceFilter,
+  flags: number,
+) => Pointer | null = user32.func(
+  "HANDLE __stdcall RegisterDeviceNotificationW(HANDLE recipient, DEV_BROADCAST_DEVICEINTERFACE_W *filter, uint32_t flags)",
+);
+
 export const Shell_NotifyIconW: (message: number, data: NotifyIconData) => number = shell32.func(
   "int __stdcall Shell_NotifyIconW(uint32_t message, NOTIFYICONDATAW *data)",
 );
@@ -289,3 +321,13 @@ export const TPM_NONOTIFY = 0x80;
 export const TPM_RETURNCMD = 0x100;
 
 export const ICON_RESOURCE_VERSION = 0x00030000;
+
+export const WM_DEVICECHANGE = 0x0219;
+export const DBT_DEVTYP_DEVICEINTERFACE = 5;
+export const DEVICE_NOTIFY_WINDOW_HANDLE = 0;
+export const GUID_DEVINTERFACE_HID: Guid = {
+  data1: 0x4d1e55b2,
+  data2: 0xf16f,
+  data3: 0x11cf,
+  data4: [0x88, 0xcb, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30],
+};

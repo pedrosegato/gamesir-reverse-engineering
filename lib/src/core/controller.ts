@@ -35,7 +35,8 @@ export class GameSirController<State = unknown> {
   private unsubscribe: () => void;
   /** Baseline for writing only the changed range. */
   private profileCache = new Map<number, Uint8Array>();
-  lastState: State | null = null;
+  private lastStateReport: Uint8Array | null = null;
+  private parsedState: State | null = null;
 
   constructor(
     private readonly transport: HidTransport,
@@ -51,6 +52,14 @@ export class GameSirController<State = unknown> {
 
   get isConnected(): boolean {
     return this.connected;
+  }
+
+  /** Parsed on demand: the controller streams up to 1000 state reports/s, most of them unread. */
+  get lastState(): State | null {
+    if (this.parsedState === null && this.lastStateReport !== null) {
+      this.parsedState = this.model.parseState(this.lastStateReport);
+    }
+    return this.parsedState;
   }
 
   async start({ heartbeatMs = 1000, testMode = false } = {}): Promise<void> {
@@ -180,9 +189,11 @@ export class GameSirController<State = unknown> {
   private handleReport(raw: Uint8Array): void {
     for (const l of this.rawListeners) l(raw);
     if (raw[0] === STATE_REPORT_ID) {
-      const state = this.model.parseState(raw);
+      this.lastStateReport = raw;
+      this.parsedState = null;
+      if (this.stateListeners.size === 0) return;
+      const state = this.lastState;
       if (state === null) return;
-      this.lastState = state;
       for (const l of this.stateListeners) l(state);
       return;
     }

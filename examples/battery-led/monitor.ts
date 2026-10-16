@@ -41,7 +41,7 @@ export interface MonitorOptions {
   readonly indicators: Indicators;
   readonly onUpdate: (update: MonitorUpdate) => void;
   readonly find?: () => Promise<FoundPad | null>;
-  readonly timing?: MonitorTiming;
+  readonly timing?: Partial<MonitorTiming>;
 }
 
 const DEFAULT_TIMING: MonitorTiming = { sampleEveryMs: 5000, sampleTimeoutMs: 1500, searchEveryMs: 3000 };
@@ -71,6 +71,7 @@ export class BatteryMonitor {
   private readonly find: () => Promise<FoundPad | null>;
   private readonly timing: MonitorTiming;
   private paused = false;
+  private wake = new AbortController();
   private stopping = false;
   private session: Session | undefined;
   /** Only on the first connection: after a reconnect the slot already holds the indicator. */
@@ -78,7 +79,7 @@ export class BatteryMonitor {
 
   constructor(private readonly options: MonitorOptions) {
     this.find = options.find ?? findPad;
-    this.timing = options.timing ?? DEFAULT_TIMING;
+    this.timing = { ...DEFAULT_TIMING, ...options.timing };
   }
 
   get isPaused(): boolean {
@@ -92,6 +93,11 @@ export class BatteryMonitor {
       if (!found) break;
       await this.watch(found, signal);
     }
+  }
+
+  /** Cuts the wait between searches short, e.g. when a USB device is plugged in. */
+  rescan(): void {
+    this.wake.abort();
   }
 
   async setPaused(paused: boolean): Promise<void> {
@@ -114,7 +120,8 @@ export class BatteryMonitor {
       } catch (error) {
         this.report({ kind: "error", during: "open", message: (error as Error).message });
       }
-      await wait(this.timing.searchEveryMs, signal);
+      await wait(this.timing.searchEveryMs, AbortSignal.any([signal, this.wake.signal]));
+      if (this.wake.signal.aborted) this.wake = new AbortController();
     }
     return null;
   }

@@ -89,14 +89,14 @@ function slotWith(pad: FakePad, animation: Animation): Uint8Array {
   return encodeLightProfile(profile).slice(LightOffset.animation(SLOT), LightOffset.animation(SLOT) + ANIMATION_SIZE);
 }
 
-function start(pads: FakePad[], connection: Connection = "dongle") {
+function start(pads: FakePad[], connection: Connection = "dongle", searchEveryMs = 5) {
   const updates: MonitorUpdate[] = [];
   const waiters: { match: (u: MonitorUpdate) => boolean; resolve: () => void }[] = [];
   const queue = [...pads];
   const monitor = new BatteryMonitor({
     slot: SLOT,
     indicators,
-    timing: { sampleEveryMs: 5, sampleTimeoutMs: 30, searchEveryMs: 5 },
+    timing: { sampleEveryMs: 5, sampleTimeoutMs: 30, searchEveryMs },
     find: async (): Promise<FoundPad | null> => {
       const transport = queue.shift();
       return transport ? { transport, connection } : null;
@@ -120,7 +120,7 @@ function start(pads: FakePad[], connection: Connection = "dongle") {
     stop.abort();
     await running;
   };
-  return { monitor, updates, until, finish };
+  return { monitor, queue, updates, until, finish };
 }
 
 const lightIs = (shown: string) => (u: MonitorUpdate) => u.kind === "light" && u.shown === shown;
@@ -182,6 +182,15 @@ describe("BatteryMonitor", () => {
     await run.until((u) => u.kind === "no-signal");
     await run.finish();
     expect(run.updates.some((u) => u.kind === "battery")).toBe(false);
+  });
+
+  it("rescan searches right away instead of waiting for the next interval", async () => {
+    const run = start([], "dongle", 60_000);
+    await run.until((u) => u.kind === "searching");
+    run.queue.push(new FakePad());
+    run.monitor.rescan();
+    await run.until((u) => u.kind === "connected");
+    await run.finish();
   });
 
   it("reconnects and restores the slot saved on the first connection", async () => {

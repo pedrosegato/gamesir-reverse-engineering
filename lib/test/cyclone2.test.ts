@@ -1,13 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   Cmd,
   Cyclone2,
+  cyclone2,
   GAME_PROFILE_SIZE,
   type HidTransport,
   LIGHT_PROFILE_SIZE,
   LightOffset,
   Profile,
   RESPONSE_REPORT_ID,
+  STATE_REPORT_ID,
 } from "../src/index.js";
 
 class FakeController implements HidTransport {
@@ -70,6 +72,13 @@ class FakeController implements HidTransport {
     const report = new Uint8Array(64);
     report[0] = RESPONSE_REPORT_ID;
     report.set(bytes, 1);
+    this.listener?.(report);
+  }
+
+  state(batteryLevel: number): void {
+    const report = new Uint8Array(64);
+    report[0] = STATE_REPORT_ID;
+    report[36] = batteryLevel;
     this.listener?.(report);
   }
 
@@ -170,6 +179,24 @@ describe("Cyclone2", () => {
     const pad = new Cyclone2(new FakeController());
     await expect(pad.writeProfile(Profile.Light, new Array(70).fill(0), 600)).rejects.toThrow(RangeError);
     await expect(pad.readProfile(7)).rejects.toThrow("Cyclone 2 has no profile 7");
+  });
+
+  it("parses state reports only when someone reads them", () => {
+    const fake = new FakeController();
+    const pad = new Cyclone2(fake);
+    const parse = vi.spyOn(cyclone2, "parseState");
+    for (let i = 0; i < 100; i++) fake.state(50);
+    fake.state(51);
+    expect(parse).not.toHaveBeenCalled();
+    expect(pad.lastState?.batteryLevel).toBe(51);
+    expect(pad.lastState?.batteryLevel).toBe(51);
+    expect(parse).toHaveBeenCalledTimes(1);
+
+    const seen: number[] = [];
+    pad.onState((s) => seen.push(s.batteryLevel));
+    fake.state(52);
+    expect(seen).toEqual([52]);
+    parse.mockRestore();
   });
 
   it("remaps a button in the game profile", async () => {

@@ -8,7 +8,7 @@ import { CALLBACK_MESSAGE, Tray } from "./tray.js";
 import { FindWindowW, STRUCT_SIZES, WM_RBUTTONUP } from "./win32.js";
 
 const WINDOW_NAME = "Cyclone2BatterySelfTest";
-const EXPECTED_SIZES = { MSG: 48, WNDCLASSEXW: 80, NOTIFYICONDATAW: 976 };
+const EXPECTED_SIZES = { MSG: 48, WNDCLASSEXW: 80, NOTIFYICONDATAW: 976, DEV_BROADCAST_DEVICEINTERFACE_W: 32 };
 const MENU_TIMEOUT_MS = 30_000;
 
 /** Clicks the icon and picks the last menu item with ↑ + Enter; Esc closes the menu if nothing was picked. */
@@ -45,6 +45,7 @@ interface MenuResult {
   readonly opened: number;
   readonly helper: string;
   readonly added: boolean;
+  readonly watchingDevices: boolean;
   readonly trayErrors: readonly string[];
 }
 
@@ -55,7 +56,14 @@ function chooseFromMenu(): Promise<MenuResult> {
     const trayErrors: string[] = [];
     const finish = (chosen: boolean) => {
       clearTimeout(timer);
-      resolve({ chosen, opened, helper: helper.trim(), added: tray.added, trayErrors });
+      resolve({
+        chosen,
+        opened,
+        helper: helper.trim(),
+        added: tray.added,
+        watchingDevices: tray.watchingDevices,
+        trayErrors,
+      });
     };
     const timer = setTimeout(() => finish(false), MENU_TIMEOUT_MS);
     const tray = new Tray({
@@ -67,6 +75,7 @@ function chooseFromMenu(): Promise<MenuResult> {
         return [{ label: "status" }, "separator", { label: "last", onClick: () => finish(true) }];
       },
       onError: (operation, code) => trayErrors.push(`${operation} ${code}`),
+      onDeviceChange: () => {},
     });
     tray.update("self-test 2", toRgb("#00ff00"));
     const child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", CLICK_LAST_MENU_ITEM], {
@@ -104,7 +113,12 @@ export async function selfTest(output: string): Promise<boolean> {
     report.error = (error as Error).stack ?? String(error);
   }
   const menu = report.menu as MenuResult | undefined;
-  report.ok = sizesMatch && menu?.chosen === true && (menu.added || !taskbar) && report.autostart === true;
+  report.ok =
+    sizesMatch &&
+    menu?.chosen === true &&
+    menu.watchingDevices &&
+    (menu.added || !taskbar) &&
+    report.autostart === true;
   writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`);
   return report.ok === true;
 }
