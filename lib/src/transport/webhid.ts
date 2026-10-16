@@ -47,6 +47,14 @@ export class WebHidTransport implements HidTransport {
     return () => this.dev.removeEventListener("inputreport", handler);
   }
 
+  onDisconnect(listener: (error?: Error) => void): () => void {
+    const handler = (e: HIDConnectionEvent) => {
+      if (e.device === this.dev) listener();
+    };
+    navigator.hid.addEventListener("disconnect", handler);
+    return () => navigator.hid.removeEventListener("disconnect", handler);
+  }
+
   async close(): Promise<void> {
     await this.dev.close();
   }

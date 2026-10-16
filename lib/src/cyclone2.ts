@@ -51,20 +51,31 @@ export class Cyclone2 {
   private stateListeners = new Set<(s: GamepadState) => void>();
   private changeListeners = new Set<(c: P.ProfileChange) => void>();
   private rawListeners = new Set<(raw: Uint8Array) => void>();
+  private disconnectListeners = new Set<(error?: Error) => void>();
+  private connected = true;
   private unsubscribe: () => void;
   /** Última imagem conhecida de cada perfil, base para escrever só o diff. */
   private profileCache = new Map<number, Uint8Array>();
   lastState: GamepadState | null = null;
 
   constructor(private readonly transport: HidTransport) {
-    this.unsubscribe = transport.onReport((raw) => this.handleReport(raw));
+    const offReport = transport.onReport((raw) => this.handleReport(raw));
+    const offDisconnect = transport.onDisconnect?.((error) => this.handleDisconnect(error));
+    this.unsubscribe = () => {
+      offReport();
+      offDisconnect?.();
+    };
+  }
+
+  get isConnected(): boolean {
+    return this.connected;
   }
 
   async start({ heartbeatMs = 1000, testMode = false } = {}): Promise<void> {
     await this.transport.write(P.heartbeat(testMode));
     this.stopHeartbeat();
     this.heartbeatTimer = setInterval(() => {
-      this.transport.write(P.heartbeat(testMode)).catch(() => this.stopHeartbeat());
+      this.transport.write(P.heartbeat(testMode)).catch((error: Error) => this.handleDisconnect(error));
     }, heartbeatMs);
   }
 
@@ -77,6 +88,19 @@ export class Cyclone2 {
     this.stopHeartbeat();
     this.unsubscribe();
     await this.transport.close();
+  }
+
+  /** Controle removido, dongle sem controle ou falha de escrita. Dispara uma vez; depois disso, feche e reabra. */
+  onDisconnect(listener: (error?: Error) => void): () => void {
+    this.disconnectListeners.add(listener);
+    return () => this.disconnectListeners.delete(listener);
+  }
+
+  private handleDisconnect(error?: Error): void {
+    if (!this.connected) return;
+    this.connected = false;
+    this.stopHeartbeat();
+    for (const l of this.disconnectListeners) l(error);
   }
 
   onState(listener: (s: GamepadState) => void): () => void {

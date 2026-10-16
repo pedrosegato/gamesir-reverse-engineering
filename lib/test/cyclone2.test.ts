@@ -18,9 +18,12 @@ class FakeController implements HidTransport {
   ]);
   written: Uint8Array[] = [];
   dropNext = 0;
+  unplugged = false;
   private listener: ((r: Uint8Array) => void) | null = null;
+  private disconnectListener: ((error?: Error) => void) | null = null;
 
   async write(report: Uint8Array): Promise<void> {
+    if (this.unplugged) throw new Error("dispositivo removido");
     this.written.push(report);
     if (this.dropNext > 0) {
       this.dropNext--;
@@ -50,6 +53,18 @@ class FakeController implements HidTransport {
     return () => {
       this.listener = null;
     };
+  }
+
+  onDisconnect(listener: (error?: Error) => void): () => void {
+    this.disconnectListener = listener;
+    return () => {
+      this.disconnectListener = null;
+    };
+  }
+
+  unplug(): void {
+    this.unplugged = true;
+    this.disconnectListener?.(new Error("dispositivo removido"));
   }
 
   /** Notificação espontânea do controle, ex.: `10 0F …` depois de gravar uma macro. */
@@ -129,6 +144,28 @@ describe("Cyclone2", () => {
 
     await pad.setMacro(1, "L4", []);
     expect((await pad.readGameProfile(1)).L4.macro.enabled).toBe(false);
+  });
+
+  it("avisa uma vez quando o controle é removido e para o heartbeat", async () => {
+    const fake = new FakeController();
+    const pad = new Cyclone2(fake);
+    await pad.start({ heartbeatMs: 5 });
+    const events: (Error | undefined)[] = [];
+    pad.onDisconnect((e) => events.push(e));
+    fake.unplug();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(events).toHaveLength(1);
+    expect(pad.isConnected).toBe(false);
+    await pad.close();
+  });
+
+  it("falha de escrita do heartbeat conta como desconexão", async () => {
+    const fake = new FakeController();
+    const pad = new Cyclone2(fake);
+    await pad.start({ heartbeatMs: 5 });
+    const disconnected = new Promise<Error | undefined>((resolve) => pad.onDisconnect(resolve));
+    fake.unplugged = true;
+    expect((await disconnected)?.message).toBe("dispositivo removido");
   });
 
   it("remapeia um botão no perfil de jogo", async () => {

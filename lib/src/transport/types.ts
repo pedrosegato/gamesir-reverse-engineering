@@ -2,6 +2,8 @@
 export interface HidTransport {
   write(report: Uint8Array): Promise<void>;
   onReport(listener: (report: Uint8Array) => void): () => void;
+  /** Dispositivo removido ou com erro de leitura. Opcional para transportes próprios. */
+  onDisconnect?(listener: (error?: Error) => void): () => void;
   close(): Promise<void>;
 }
 

@@ -20,7 +20,14 @@ export async function findCyclone2(): Promise<DeviceInfo[]> {
 }
 
 export class NodeHidTransport implements HidTransport {
-  private constructor(private readonly dev: HID.HIDAsync) {}
+  private disconnectListeners = new Set<(error?: Error) => void>();
+
+  /** Sem um listener de `error`, o node-hid derruba o processo quando o controle é desconectado. */
+  private constructor(private readonly dev: HID.HIDAsync) {
+    dev.on("error", (error: Error) => {
+      for (const l of this.disconnectListeners) l(error);
+    });
+  }
 
   static async open(path: string): Promise<NodeHidTransport> {
     return new NodeHidTransport(await HID.HIDAsync.open(path));
@@ -36,8 +43,14 @@ export class NodeHidTransport implements HidTransport {
     return () => this.dev.off("data", handler);
   }
 
+  onDisconnect(listener: (error?: Error) => void): () => void {
+    this.disconnectListeners.add(listener);
+    return () => this.disconnectListeners.delete(listener);
+  }
+
   async close(): Promise<void> {
     this.dev.removeAllListeners("data");
-    await this.dev.close();
+    this.disconnectListeners.clear();
+    await this.dev.close().catch(() => undefined);
   }
 }
