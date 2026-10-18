@@ -65,7 +65,7 @@ Não existe "salvar": cada gravação vale na hora. Os métodos tipados enviam s
 
 No repositório, em [`examples/`](../examples):
 
-- [`battery-led`](../examples/battery-led): mostra o nível da bateria nos LEDs do controle. Foi o script que deu origem à lib. Também existe como app de bandeja para Windows, na página de [releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases).
+- [`battery-led`](../examples/battery-led): mostra o nível da bateria nos LEDs do controle. Foi o script que deu origem à lib. Também existe como um app em segundo plano no Windows, na página de [releases](https://github.com/pedrosegato/gamesir-reverse-engineering/releases).
 - [`lights.ts`](../examples/lights.ts): cores estáticas, presets e a animação ativa
 - [`vibrate.ts`](../examples/vibrate.ts): vibração
 

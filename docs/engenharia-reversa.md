@@ -8,7 +8,7 @@ Eu queria ver a bateria do meu Cyclone 2 sem abrir o GameSir Connect só para co
 
 Depois procurei uma lib ou um script que lesse a bateria do controle e mudasse os LEDs por código. Também não achei. O protocolo não é documentado, e o único programa que fala com o controle é o próprio app da GameSir.
 
-Então decidi abrir o app. O GameSir Connect é feito em Electron, ou seja, por baixo é JavaScript, e dá para ler. Tirei de lá as funções que conversam com o controle e escrevi o script eu mesmo: o [`battery-led`](../examples/battery-led), que hoje também roda como app de bandeja no Windows. Com o script funcionando, ficou claro que o mesmo caminho servia para controlar o controle inteiro, e o script virou a lib.
+Então decidi abrir o app. O GameSir Connect é feito em Electron, ou seja, por baixo é JavaScript, e dá para ler. Tirei de lá as funções que conversam com o controle e escrevi o script eu mesmo: o [`battery-led`](../examples/battery-led), que hoje também roda como um app em segundo plano no Windows. Com o script funcionando, ficou claro que o mesmo caminho servia para controlar o controle inteiro, e o script virou a lib.
 
 ## O processo
 
