@@ -2,9 +2,9 @@
 title: Visão geral
 ---
 
-`gamesir-hid` é uma lib em TypeScript que controla os controles GameSir por HID, sem o GameSir Connect aberto. Com ela, um programa seu muda as luzes, remapeia botões, grava macros, vibra o controle e lê o estado ao vivo: botões, analógicos, bateria e sensores de movimento.
+`gamesir-hid` é uma lib em TypeScript que controla os controles GameSir por HID, sem precisar do app GameSir Connect. Com ela, um programa seu muda as luzes, remapeia botões, grava macros, vibra o controle e lê o estado ao vivo: botões, analógicos, bateria e sensores de movimento.
 
-O GameSir Connect não documenta o protocolo. Ele foi extraído do código do próprio app, na versão 1.16.7, e conferido num Cyclone 2 de verdade. A [engenharia reversa](engenharia-reversa.md) conta como isso foi feito e por quê.
+O GameSir Connect não documenta o protocolo. Ele foi extraído do código do próprio app, na versão 1.16.7, e conferido num Cyclone 2. A [engenharia reversa](engenharia-reversa.md) conta como isso foi feito e por quê.
 
 ## Controles suportados
 
@@ -28,7 +28,7 @@ Node 18 ou superior. No Linux, o usuário precisa de acesso ao `hidraw`, com uma
 
 ## Uso
 
-O fluxo é sempre o mesmo: achar o controle, abrir a conexão e chamar `start()`. O `start()` liga o heartbeat, que mantém o controle mandando o estado. Depois disso, cada método grava direto no controle.
+O fluxo é sempre o mesmo: achar o controle, abrir a conexão e chamar `start()`. O `start()` liga o heartbeat, que mantém o controle mandando o estado. Depois disso, os métodos de escrita gravam direto no controle.
 
 ```ts
 import { Cyclone2, KeyCode } from "gamesir-hid";
@@ -51,7 +51,7 @@ pad.onState((s) => console.log(s.batteryLevel, s.buttons.A, s.leftStick, s.imu.a
 pad.onDisconnect(() => console.log("controle desconectado"));
 ```
 
-As gravações valem na hora e não existe "salvar". A lib envia só os bytes que mudaram.
+Não existe "salvar": cada gravação vale na hora. Os métodos tipados enviam só os bytes que mudaram.
 
 | Área | Métodos |
 |---|---|
@@ -71,7 +71,7 @@ No repositório, em [`examples/`](../examples):
 
 ## Páginas
 
-- [API](api.mdx): cada método explicado, com botões para testar no seu controle
+- [API](api.mdx): os métodos da lib, com exemplos e botões para testar no seu controle
 - [Protocolo](protocolo.md): os bytes, ou seja, pacotes, comandos, report de estado e o layout dos perfis
 - [Engenharia reversa](engenharia-reversa.md): como o protocolo foi extraído do app e conferido no controle
 - [Testar no navegador](testar.mdx): luzes, vibração e botões de um Cyclone 2 ao vivo

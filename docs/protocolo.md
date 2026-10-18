@@ -2,7 +2,7 @@
 
 Este é o protocolo de configuração que o GameSir Connect 1.16.7 usa para falar com o Cyclone 2. Todos os valores estão em hexadecimal e os offsets contam a partir de 0. Inteiros de 16 bits são big-endian, com uma exceção: a IMU, que é little-endian.
 
-O modelo geral é este. Além do gamepad que o Windows enxerga, o controle expõe uma segunda interface HID só para configuração. Por ela, você manda comandos de 64 bytes e o controle responde. Enquanto você mantiver um heartbeat, o controle também transmite o próprio estado sem parar: botões, analógicos, bateria e LEDs. Toda a configuração (luzes, mapeamentos, macros, gatilhos) mora em **perfis**, blocos de memória numerados que você lê e grava por offset. Mudar o controle é gravar bytes no lugar certo de um perfil.
+Além do gamepad que o Windows enxerga, o controle expõe uma segunda interface HID só para configuração. Por ela, você manda comandos de 64 bytes e o controle responde. Enquanto você mantiver um heartbeat, o controle também transmite o próprio estado sem parar: botões, analógicos, bateria e LEDs. Toda a configuração (luzes, mapeamentos, macros, gatilhos) mora em **perfis**, blocos de memória numerados que você lê e grava por offset. Mudar o controle é gravar bytes no lugar certo de um perfil.
 
 ## Dispositivo
 
@@ -48,7 +48,7 @@ O resto da sessão segue as regras do app. Ele espera a resposta de cada comando
 
 ## Comandos
 
-Os comandos que importam no dia a dia são poucos: ler e gravar perfil (`04` e `03`), trocar o perfil de jogo ativo (`07`) e vibrar (`20`). Os outros cobrem firmware, gravação de macro pelo próprio controle e atualização. Cuidado com `17` e `FC`: os dois colocam o controle em modo de atualização de firmware.
+No dia a dia, quase tudo passa por quatro comandos: ler e gravar perfil (`04` e `03`), trocar o perfil de jogo ativo (`07`) e vibrar (`20`). `17` e `FC` tiram o controle do modo normal para atualizar o firmware, e a lib não usa nenhum dos dois.
 
 `n` = perfil · `oH oL` = offset · `len` ≤ 58.
 
@@ -68,7 +68,7 @@ Os comandos que importam no dia a dia são poucos: ler e gravar perfil (`04` e `
 | `FC` | `0F FC` | — | entra em modo DFU |
 | `FD` | `0F FD s` | — | calibração; o app nunca envia (não verificado) |
 
-O controle também avisa quando ele mesmo muda um perfil, por exemplo quando você troca a animação pelo botão M ou termina uma gravação de macro. Quem guarda uma cópia do perfil precisa reler o trecho avisado.
+Quem guarda uma cópia de um perfil precisa reler o trecho que esta notificação avisa.
 
 **Notificação `10 0F n oH oL lenH lenL`**: o controle alterou `len` bytes do perfil `n` a partir de `offset` (troca de animação pelo botão M, fim de gravação de macro). `n = 48` indica o perfil ativo.
 
@@ -112,7 +112,7 @@ Frequência: no cabo, a taxa de report do perfil ativo (250, 500 ou 1000 Hz); pe
 | 54–62 | | entradas físicas, no mesmo layout dos bytes 1–9 |
 | 60 | 3, 4, 5 | L4, R4, M |
 
-Dois detalhes pegam quem lê esse report pela primeira vez:
+Dois detalhes do report:
 
 - Bytes 1–9 já saem com o mapeamento do perfil: com A remapeado para B, apertar A aparece como B. Os bytes 54–62 trazem o botão físico.
 - As cores de 38–52 são as do instante, com animação e brilho aplicados.
@@ -135,7 +135,7 @@ A IMU é o sensor de movimento: um giroscópio, que mede rotação, e um aceler�
 
 ## Perfis
 
-Perfis são onde a configuração mora. Existem quatro perfis de jogo, que você alterna no controle, mais uma camada Shift e um perfil de luz separado. Ler ou mudar qualquer coisa é ler ou gravar um trecho de um deles com os comandos `04` e `03`.
+Perfis são onde a configuração mora. Existem quatro perfis de jogo, mais uma camada Shift e um perfil de luz separado. Ler ou mudar qualquer coisa é ler ou gravar um trecho de um deles com os comandos `04` e `03`.
 
 | `n` | Tamanho | Conteúdo |
 |---|---|---|
@@ -226,7 +226,7 @@ Opções que valem para o perfil inteiro, como a força da vibração e a taxa d
 
 #### Botões (64–175)
 
-Cada botão tem um bloco de 7 bytes que diz o que ele envia. Pode ser ele mesmo, outro botão, até três teclas juntas, com turbo ou como toggle.
+O bloco de cada botão diz o que ele envia: ele mesmo, outro botão, até três teclas juntas, com turbo ou como toggle.
 
 16 blocos de 7 bytes, na ordem `Up, Down, Left, Right, LB, RB, LS, RS, A, B, X, Y, Home, View, Menu, Capture`.
 
@@ -262,7 +262,7 @@ O app grava macros com o mapeamento do botão desligado (`+2` = 0).
 
 #### Gatilhos LT e RT (28 bytes cada)
 
-Os gatilhos têm o mapeamento de um botão e, além dele, ajustes do curso analógico. O hair trigger faz o gatilho disparar com um toque curto, em vez de esperar o curso inteiro.
+Os gatilhos têm o mapeamento de um botão e, além dele, ajustes do curso analógico.
 
 | Offset | Campo |
 |---|---|
@@ -276,7 +276,7 @@ Os gatilhos têm o mapeamento de um botão e, além dele, ajustes do curso anal�
 
 #### Analógicos e giroscópio
 
-Analógicos e giroscópio compartilham a mesma ideia: uma zona morta, uma curva de resposta e um mapeamento de eixo que pode transformar o movimento em outro analógico, em teclas ou em mouse. Os sub-blocos que eles usam estão logo abaixo.
+Analógicos e giroscópio compartilham a mesma ideia: uma zona morta, uma curva de resposta e um mapeamento de eixo que pode transformar o movimento em outro analógico, em teclas ou em mouse.
 
 | Bloco | Layout |
 |---|---|
