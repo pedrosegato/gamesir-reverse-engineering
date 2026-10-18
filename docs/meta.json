@@ -1,6 +1,6 @@
 {
   "slug": "gamesir-hid",
   "title": "gamesir-hid",
-  "description": "protocolo HID reverso e biblioteca Node para GameSir",
+  "description": "lib em TypeScript para comunicação e manipulação dos controles GameSir",
   "pages": ["index", "api", "protocolo", "engenharia-reversa"]
 }
