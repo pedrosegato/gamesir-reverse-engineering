@@ -1,10 +1,12 @@
 # Protocolo HID do Cyclone 2
 
-Protocolo de configuração usado pelo GameSir Connect 1.16.7. Valores em hexadecimal, offsets a partir de 0, inteiros de 16 bits em big-endian (exceto a IMU, little-endian).
+Este é o protocolo de configuração que o GameSir Connect 1.16.7 usa para falar com o Cyclone 2. Todos os valores estão em hexadecimal e os offsets contam a partir de 0. Inteiros de 16 bits são big-endian, com uma exceção: a IMU, que é little-endian.
+
+O modelo geral é este. Além do gamepad que o Windows enxerga, o controle expõe uma segunda interface HID só para configuração. Por ela, você manda comandos de 64 bytes e o controle responde. Enquanto você mantiver um heartbeat, o controle também transmite o próprio estado sem parar: botões, analógicos, bateria e LEDs. Toda a configuração (luzes, mapeamentos, macros, gatilhos) mora em **perfis**, blocos de memória numerados que você lê e grava por offset. Mudar o controle é gravar bytes no lugar certo de um perfil.
 
 ## Dispositivo
 
-VID `0x3537`.
+Controle e dongle usam o vendor ID (VID) `0x3537`. O product ID (PID) diz como o controle está ligado.
 
 | PID | Conexão |
 |---|---|
@@ -14,7 +16,7 @@ VID `0x3537`.
 | `0x101D` | cabo, firmware 1.x (não verificado) |
 | `0x0575` | dongle sem controle conectado; não responde a comandos |
 
-Coleções HID, iguais no dongle e no cabo:
+Cada conexão expõe várias coleções HID, iguais no dongle e no cabo. Tudo nesta página passa pela coleção `0xFFF0`. As outras são o gamepad e os dispositivos que um mapeamento pode imitar.
 
 | Interface | Usage page / usage | Função |
 |---|---|---|
@@ -26,7 +28,7 @@ O dispositivo se apresenta como "Xbox 360 Controller for Windows". O app não su
 
 ## Pacotes
 
-Todo report tem 64 bytes; o byte 0 é o report ID.
+A conversa acontece por reports de 64 bytes. O primeiro byte é o report ID e diz o tipo: `0x0F` é você mandando um comando, `0x10` é o controle respondendo e `0x12` é o estado chegando sem parar.
 
 | Report ID | Sentido | Formato |
 |---|---|---|
@@ -34,15 +36,19 @@ Todo report tem 64 bytes; o byte 0 é o report ID.
 | `0x10` | controle → host | `10 <cmd> …`: resposta ou notificação |
 | `0x12` | controle → host | estado, enviado continuamente enquanto houver heartbeat |
 
-Sessão:
+O estado só chega enquanto o controle sabe que tem alguém ouvindo. Para isso existe o heartbeat: mande `0F F2 00` a cada segundo. Se você parar, o `0x12` para também.
 
-- Heartbeat `0F F2 00` a cada 1 s. Sem ele, o controle para de enviar `0x12`. `0F F2 01` ativa o modo de teste de botões.
+O resto da sessão segue as regras do app. Ele espera a resposta de cada comando antes de mandar o próximo e reenvia o que fica sem resposta:
+
+- `0F F2 01`, em vez de `00`, ativa o modo de teste de botões.
 - Um comando por vez. Sem resposta em 200 ms, reenviar; desistir após 10 envios.
 - `10 06 00` confirma `03` e `07`; `10 06 01` = ocupado, reenviar.
 - `10 0E` e `10 0F` são notificações, não respostas.
 - `0D` (LED), `16` (gravação de macro) e `20` (vibração) não têm resposta.
 
 ## Comandos
+
+Os comandos que importam no dia a dia são poucos: ler e gravar perfil (`04` e `03`), trocar o perfil de jogo ativo (`07`) e vibrar (`20`). Os outros cobrem firmware, gravação de macro pelo próprio controle e atualização. Cuidado com `17` e `FC`: os dois colocam o controle em modo de atualização de firmware.
 
 `n` = perfil · `oH oL` = offset · `len` ≤ 58.
 
@@ -62,11 +68,15 @@ Sessão:
 | `FC` | `0F FC` | — | entra em modo DFU |
 | `FD` | `0F FD s` | — | calibração; o app nunca envia (não verificado) |
 
+O controle também avisa quando ele mesmo muda um perfil, por exemplo quando você troca a animação pelo botão M ou termina uma gravação de macro. Quem guarda uma cópia do perfil precisa reler o trecho avisado.
+
 **Notificação `10 0F n oH oL lenH lenL`**: o controle alterou `len` bytes do perfil `n` a partir de `offset` (troca de animação pelo botão M, fim de gravação de macro). `n = 48` indica o perfil ativo.
 
 Definidos no app e nunca enviados: `0F 04 n 03 9D 07` (ler "device info", offset 925; responde como leitura comum, 7 bytes zerados), `0F 03 n 03 9E 06 <6 ASCII>` (gravar "device id"), `0F 01` e `0F 02 s` (entrar e sair de configuração).
 
 ### Versão de firmware
+
+A resposta ao `09` traz duas versões em texto UTF-16LE: a do controle e a do dongle.
 
 ```
 10 0A 30 00 33 00 34 00 36 00 30 00 31 00 32 00 31 00
@@ -76,6 +86,8 @@ Definidos no app e nunca enviados: `0F 04 n 03 9D 07` (ler "device info", offset
 Bytes 2–9: controle. Bytes 10–17: dongle, zerados no cabo. A versão são os dígitos após o primeiro: `"0346"` → 3.4.6.
 
 ## Report de estado `0x12`
+
+É o report que o controle manda o tempo todo enquanto houver heartbeat. Ele junta num pacote só tudo o que dá para ler ao vivo: entradas, sensores de movimento, bateria e a cor que cada LED mostra naquele instante.
 
 Frequência: no cabo, a taxa de report do perfil ativo (250, 500 ou 1000 Hz); pelo dongle, cerca de 200 por segundo.
 
@@ -100,13 +112,16 @@ Frequência: no cabo, a taxa de report do perfil ativo (250, 500 ou 1000 Hz); pe
 | 54–62 | | entradas físicas, no mesmo layout dos bytes 1–9 |
 | 60 | 3, 4, 5 | L4, R4, M |
 
+Dois detalhes pegam quem lê esse report pela primeira vez:
+
 - Bytes 1–9 já saem com o mapeamento do perfil: com A remapeado para B, apertar A aparece como B. Os bytes 54–62 trazem o botão físico.
 - As cores de 38–52 são as do instante, com animação e brilho aplicados.
-- Sem significado conhecido: bytes 10, 12 e 25–34.
+
+Sem significado conhecido: bytes 10, 12 e 25–34.
 
 ### IMU
 
-Valores crus, sem calibração. Eixos com o controle deitado, botões para cima:
+A IMU é o sensor de movimento: um giroscópio, que mede rotação, e um acelerômetro, que mede aceleração e, em repouso, a gravidade. Os valores chegam crus, sem calibração. Os eixos abaixo valem com o controle deitado, botões para cima:
 
 | Eixo | Aponta para | Giroscópio positivo quando |
 |---|---|---|
@@ -120,6 +135,8 @@ Valores crus, sem calibração. Eixos com o controle deitado, botões para cima:
 
 ## Perfis
 
+Perfis são onde a configuração mora. Existem quatro perfis de jogo, que você alterna no controle, mais uma camada Shift e um perfil de luz separado. Ler ou mudar qualquer coisa é ler ou gravar um trecho de um deles com os comandos `04` e `03`.
+
 | `n` | Tamanho | Conteúdo |
 |---|---|---|
 | 1–4 | 680 | perfil de jogo |
@@ -131,6 +148,8 @@ Valores crus, sem calibração. Eixos com o controle deitado, botões para cima:
 - O app grava só o intervalo entre o primeiro e o último byte alterado.
 
 ### Perfil de luz (32)
+
+As luzes funcionam como animações de quadros. Existem quatro animações do usuário, das quais uma está ativa por vez, mais uma quinta que o controle toca enquanto carrega. Cada animação tem até 8 quadros, e cada quadro define a cor das cinco zonas de LED. Uma cor fixa é só uma animação de um quadro.
 
 | Offset | Tam. | Campo |
 |---|---|---|
@@ -153,7 +172,7 @@ Animação, 124 bytes:
 | +3 | brilho, 0–100 |
 | +4 + 15·f | frame `f` (0–7): 5 cores RGB |
 
-Cores dentro do frame, em ordem diferente da do report `0x12`:
+Dentro do frame, as cores vêm numa ordem diferente da do report `0x12`. É fácil trocar uma zona pela outra aqui:
 
 | Posição | Bytes | Zona | LED |
 |---|---|---|---|
@@ -171,6 +190,8 @@ Cores dentro do frame, em ordem diferente da do report `0x12`:
 - Os presets do app (Flow, Rainbow, Pulse, Standoff, Alarm, Off) só preenchem frames e velocidade de uma animação. As cores estão em `lib/src/presets.ts`.
 
 ### Perfil de jogo (1–5)
+
+O perfil de jogo guarda tudo o que muda como o controle se comporta: o que cada botão envia, as macros dos botões traseiros, a zona morta e a curva dos gatilhos e analógicos, e o giroscópio. Ele é dividido em blocos fixos, um por parte do controle.
 
 Booleanos usam o bit 0. `+n` é relativo ao início do bloco.
 
@@ -190,6 +211,8 @@ Booleanos usam o bit 0. `+n` é relativo ao início do bloco.
 
 #### Configurações gerais (32–63)
 
+Opções que valem para o perfil inteiro, como a força da vibração e a taxa de report.
+
 | Offset | Campo |
 |---|---|
 | 32–35 | vibração dos motores esquerdo, direito, LT e RT: 0, 25, 50, 75 ou 100 |
@@ -203,6 +226,8 @@ Booleanos usam o bit 0. `+n` é relativo ao início do bloco.
 
 #### Botões (64–175)
 
+Cada botão tem um bloco de 7 bytes que diz o que ele envia. Pode ser ele mesmo, outro botão, até três teclas juntas, com turbo ou como toggle.
+
 16 blocos de 7 bytes, na ordem `Up, Down, Left, Right, LB, RB, LS, RS, A, B, X, Y, Home, View, Menu, Capture`.
 
 | +0 | +1 | +2 | +3..+5 | +6 |
@@ -213,6 +238,8 @@ Códigos de tecla (tabela completa em `lib/src/keycodes.ts`): 1–20 botões do 
 
 #### L4 e R4 (159 bytes cada)
 
+Os botões traseiros começam como um botão comum e ganham uma macro: uma sequência de até 30 passos, cada passo uma tecla segurada por um tempo.
+
 | Offset | Campo |
 |---|---|
 | +0..+6 | igual a um botão |
@@ -222,7 +249,7 @@ Códigos de tecla (tabela completa em `lib/src/keycodes.ts`): 1–20 botões do 
 | +11..+155 | passos 1–29: `tecla, hold (2 B), delay (2 B)`, em ms |
 | +156..+158 | passo 30: `tecla, hold` (sem delay) |
 
-Execução:
+Como a macro roda:
 
 - `delay`: do início do passo ao início do próximo; se for menor que o `hold`, os passos se sobrepõem
 - Loop: recomeça `intervalo` ms depois do fim do último passo
@@ -231,9 +258,11 @@ Execução:
 
 O app grava macros com o mapeamento do botão desligado (`+2` = 0).
 
-**Gravação pelo controle (`0F 16`)**: o byte 53 do `0x12` indica a gravação em curso. Cada aperto vira um passo, com hold e delay medidos; direções de analógico também entram. A gravação termina com `0F 16 k 02` (em cerca de 200 ms) ou sozinha ao chegar em 30 passos. Ao terminar, o controle grava o bloco do botão e notifica (`10 0F 01 00 B0 00 9F` para o L4 no perfil 1). Uma gravação de um passo só vira mapeamento simples.
+**Gravação pelo controle (`0F 16`)**: o controle também grava uma macro sozinho, a partir do que você aperta. O byte 53 do `0x12` indica a gravação em curso. Cada aperto vira um passo, com hold e delay medidos; direções de analógico também entram. A gravação termina com `0F 16 k 02` (em cerca de 200 ms) ou sozinha ao chegar em 30 passos. Ao terminar, o controle grava o bloco do botão e notifica (`10 0F 01 00 B0 00 9F` para o L4 no perfil 1). Uma gravação de um passo só vira mapeamento simples.
 
 #### Gatilhos LT e RT (28 bytes cada)
+
+Os gatilhos têm o mapeamento de um botão e, além dele, ajustes do curso analógico. O hair trigger faz o gatilho disparar com um toque curto, em vez de esperar o curso inteiro.
 
 | Offset | Campo |
 |---|---|
@@ -246,6 +275,8 @@ O app grava macros com o mapeamento do botão desligado (`+2` = 0).
 | +15..+27 | curva |
 
 #### Analógicos e giroscópio
+
+Analógicos e giroscópio compartilham a mesma ideia: uma zona morta, uma curva de resposta e um mapeamento de eixo que pode transformar o movimento em outro analógico, em teclas ou em mouse. Os sub-blocos que eles usam estão logo abaixo.
 
 | Bloco | Layout |
 |---|---|
