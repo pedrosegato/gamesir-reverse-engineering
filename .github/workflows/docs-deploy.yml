@@ -1,0 +1,16 @@
+# Rebuilds docs.pedrosegato.com when the docs change. Needs the repo secret DOCS_DEPLOY_HOOK
+# (Vercel deploy hook of the docs project); skipped while it isn't set.
+name: docs
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", "README.md"]
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          HOOK: ${{ secrets.DOCS_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "DOCS_DEPLOY_HOOK not set, skipping"; exit 0; fi
+          curl -fsS -X POST "$HOOK"

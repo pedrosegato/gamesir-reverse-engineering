@@ -1,0 +1,6 @@
+{
+  "slug": "gamesir-hid",
+  "title": "gamesir-hid",
+  "description": "protocolo do GameSir decifrado, com lib própria",
+  "pages": ["index", "api", "protocolo", "engenharia-reversa"]
+}
