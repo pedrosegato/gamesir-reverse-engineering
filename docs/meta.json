@@ -1,6 +1,6 @@
 {
   "slug": "gamesir-hid",
   "title": "gamesir-hid",
-  "description": "protocolo do GameSir decifrado, com lib própria",
+  "description": "protocolo HID reverso e biblioteca Node para GameSir",
   "pages": ["index", "api", "protocolo", "engenharia-reversa"]
 }
