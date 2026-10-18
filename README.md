@@ -61,7 +61,7 @@ Writes take effect immediately and only send the bytes that changed.
 
 Written in Portuguese.
 
-- [docs/api.md](docs/api.md): API reference
+- [docs/api.mdx](docs/api.mdx): API reference
 - [docs/protocolo.md](docs/protocolo.md): HID protocol (packets, commands, state report, profile layouts)
 - [docs/engenharia-reversa.md](docs/engenharia-reversa.md): how the protocol was extracted from the app and verified on the device
 
