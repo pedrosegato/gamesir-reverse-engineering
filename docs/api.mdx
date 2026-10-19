@@ -1,4 +1,4 @@
-# API da lib `gamesir-hid`
+# API
 
 A lib é TypeScript e roda no Node (sobre o `node-hid`) e no navegador (sobre o WebHID). Ela tem duas camadas. O **núcleo** fala o protocolo que toda a família de controles GameSir compartilha: conexão, fila de comandos, heartbeat, leitura e escrita de perfis. Os **modelos** sabem o que cada byte significa num controle específico e oferecem métodos tipados, como "mude a cor do Home" em vez de "grave estes bytes neste offset". Hoje existe um modelo: `Cyclone2`.
 
