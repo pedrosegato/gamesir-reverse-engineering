@@ -187,7 +187,7 @@ Dentro do frame, as cores vêm numa ordem diferente da do report `0x12`. É fác
 - A coluna `UpperRight` acende tantos LEDs quanto o número do perfil de jogo ativo, de cima para baixo: perfil 1 só o de cima, perfil 4 todos. Na dock o controle desliga e o firmware acende a coluna de baixo para cima até o Home; nada no perfil de luz muda essa animação. Não há comando para acender os LEDs da coluna um a um.
 - No controle, M + analógico esquerdo ←/→ troca a animação ativa; o controle notifica com `10 0F`.
 - Para apagar, use um frame preto; não existe flag de desligar.
-- Os presets do app (Flow, Rainbow, Pulse, Standoff, Alarm, Off) só preenchem frames e velocidade de uma animação. As cores estão em `lib/src/presets.ts`.
+- Os presets do app (Flow, Rainbow, Pulse, Standoff, Alarm, Off) só preenchem frames e velocidade de uma animação. As cores estão em `lib/src/models/cyclone2/presets.ts`.
 
 ### Perfil de jogo (1–5)
 
@@ -234,7 +234,7 @@ O bloco de cada botão diz o que ele envia: ele mesmo, outro botão, até três 
 |---|---|---|---|---|
 | turbo ligado | turbo, Hz (0–30) | mapeamento ligado | até 3 códigos de tecla, pressionados juntos | toggle |
 
-Códigos de tecla (tabela completa em `lib/src/keycodes.ts`): 1–20 botões do controle (incluindo L4, R4, LT, RT), 21–28 direções dos analógicos, 50–155 teclado, 200–206 mouse, 230 Mute, 231 Shift, 255 desativado.
+Códigos de tecla (tabela completa em `lib/src/core/keycodes.ts`): 1–20 botões do controle (incluindo L4, R4, LT, RT), 21–28 direções dos analógicos, 50–155 teclado, 200–206 mouse, 230 Mute, 231 Shift, 255 desativado.
 
 #### L4 e R4 (159 bytes cada)
 

@@ -59,11 +59,12 @@ Writes take effect immediately and only send the bytes that changed.
 
 ## Docs
 
-Written in Portuguese.
+At [docs.pedrosegato.com/gamesir-hid](https://docs.pedrosegato.com/gamesir-hid), in Portuguese. The sources are in [`docs/`](docs).
 
-- [docs/api.mdx](docs/api.mdx): API reference
-- [docs/protocolo.md](docs/protocolo.md): HID protocol (packets, commands, state report, profile layouts)
-- [docs/engenharia-reversa.md](docs/engenharia-reversa.md): how the protocol was extracted from the app and verified on the device
+- [API](https://docs.pedrosegato.com/gamesir-hid/api): API reference, with buttons to try each method on your controller
+- [Protocol](https://docs.pedrosegato.com/gamesir-hid/protocolo): HID protocol (packets, commands, state report, profile layouts)
+- [Reverse engineering](https://docs.pedrosegato.com/gamesir-hid/engenharia-reversa): how the protocol was extracted from the app and verified on the device
+- [Try in the browser](https://docs.pedrosegato.com/gamesir-hid/testar): lights, vibration and buttons of a Cyclone 2, live
 
 ## License
 

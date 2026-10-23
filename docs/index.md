@@ -39,27 +39,11 @@ const pad = new Cyclone2(await NodeHidTransport.open(device.path));
 await pad.start();
 
 await pad.setStaticColor({ Home: "#00aaff" });
-await pad.applyPreset("Rainbow", 1);
 await pad.remapButton(1, KeyCode.A, KeyCode.B);
-await pad.setMacro(1, KeyCode.L4, [
-  { key: KeyCode.A, holdMs: 50, delayMs: 100 },
-  { key: KeyCode.B, holdMs: 50, delayMs: 0 },
-]);
-await pad.vibrate(200, 200, 300);
-
-pad.onState((s) => console.log(s.batteryLevel, s.buttons.A, s.leftStick, s.imu.accel));
-pad.onDisconnect(() => console.log("controle desconectado"));
+pad.onState((s) => console.log(s.batteryLevel, s.buttons.A));
 ```
 
-Não existe "salvar": cada gravação vale na hora. Os métodos tipados enviam só os bytes que mudaram.
-
-| Área | Métodos |
-|---|---|
-| Sessão | `start`, `close`, `onState`, `onProfileChanged`, `onDisconnect` |
-| Dispositivo | `readFirmwareVersion`, `readCurrentProfile`, `switchProfile`, `vibrate` |
-| Luzes | `setStaticColor`, `setAnimation`, `applyPreset`, `setActiveAnimation`, `setStandbyTime`, `readLightProfile`, `writeLightProfile` |
-| Perfis de jogo | `remapButton`, `setMacro`, `setReportRate`, `setMacroRecording`, `readGameProfile`, `writeGameProfile` |
-| Baixo nível | `readProfile`, `writeProfile`, `request`, montadores de pacote em `protocol.*` |
+Não existe "salvar": cada gravação vale na hora. Todos os métodos, com exemplos, estão na [API](api.mdx).
 
 ## Exemplos
 

@@ -19,8 +19,8 @@ await pad.remapButton(1, KeyCode.A, KeyCode.B);
 pad.onState((s) => console.log(s.batteryLevel, s.buttons.A, s.imu.accel));
 ```
 
-- [API reference](https://github.com/pedrosegato/gamesir-reverse-engineering/blob/main/docs/api.mdx) (Portuguese)
-- [HID protocol](https://github.com/pedrosegato/gamesir-reverse-engineering/blob/main/docs/protocolo.md) (Portuguese)
+- [API reference](https://docs.pedrosegato.com/gamesir-hid/api) (Portuguese)
+- [HID protocol](https://docs.pedrosegato.com/gamesir-hid/protocolo) (Portuguese)
 - [Examples](https://github.com/pedrosegato/gamesir-reverse-engineering/tree/main/examples)
 
 MIT. Not affiliated with or endorsed by GameSir.
