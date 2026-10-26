@@ -1,6 +1,6 @@
 {
   "name": "gamesir-hid",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Control GameSir controllers over HID (lights, profiles, macros, vibration, live state), reverse-engineered from GameSir Connect",
   "keywords": [
     "gamesir",
@@ -15,7 +15,11 @@
     "reverse-engineering"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/pedrosegato/gamesir-reverse-engineering#readme",
+  "author": {
+    "name": "Pedro Segato",
+    "url": "https://www.pedrosegato.com"
+  },
+  "homepage": "https://docs.pedrosegato.com/gamesir-hid",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pedrosegato/gamesir-reverse-engineering.git",
