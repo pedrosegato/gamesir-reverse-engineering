@@ -4,11 +4,11 @@ title: Visão geral
 
 `gamesir-hid` é uma lib em TypeScript que controla os controles GameSir por HID, sem precisar do app GameSir Connect. Com ela, um programa seu muda as luzes, remapeia botões, grava macros, vibra o controle e lê o estado ao vivo: botões, analógicos, bateria e sensores de movimento.
 
-O GameSir Connect não documenta o protocolo. Ele foi extraído do código do próprio app, na versão 1.16.7, e conferido num Cyclone 2. A [engenharia reversa](engenharia-reversa.md) conta como isso foi feito e por quê.
+O GameSir Connect não documenta o protocolo. Ele foi extraído do código do próprio app, na versão 1.16.7, e conferido num Cyclone 2. A [engenharia reversa](engenharia-reversa.md) resume como isso foi feito.
 
 ## Controles suportados
 
-Vários controles da GameSir falam o mesmo protocolo, mas cada modelo tem o próprio layout de perfil. Por enquanto, só o Cyclone 2 tem esse layout mapeado.
+Vários controles da GameSir usam o mesmo protocolo, mas cada modelo tem o próprio layout de perfil. Por enquanto, só o Cyclone 2 tem esse layout mapeado.
 
 | Controle | Suporte |
 |---|---|
@@ -43,7 +43,7 @@ await pad.remapButton(1, KeyCode.A, KeyCode.B);
 pad.onState((s) => console.log(s.batteryLevel, s.buttons.A));
 ```
 
-Não existe "salvar": cada gravação vale na hora. Todos os métodos, com exemplos, estão na [API](api.mdx).
+Não existe função de salvar, toda mudança é instantânea. Todos os métodos, com exemplos, estão na [API](api.mdx).
 
 ## Exemplos
 
@@ -55,9 +55,9 @@ No repositório, em [`examples/`](../examples):
 
 ## Páginas
 
-- [API](api.mdx): os métodos da lib, com exemplos e botões para testar no seu controle
+- [API](api.mdx): os métodos da lib, com exemplos e botões para testar no seu controle (apenas em navegadores baseados em Chromium)
 - [Protocolo](protocolo.md): os bytes, ou seja, pacotes, comandos, report de estado e o layout dos perfis
-- [Engenharia reversa](engenharia-reversa.md): como o protocolo foi extraído do app e conferido no controle
+- [Engenharia reversa](engenharia-reversa.md): como o protocolo foi extraído do app, onde fica cada parte no código dele e o que foi conferido no controle
 - [Testar no navegador](testar.mdx): luzes, vibração e botões de um Cyclone 2 ao vivo
 
 ## Licença

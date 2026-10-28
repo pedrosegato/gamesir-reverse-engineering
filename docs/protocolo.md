@@ -1,6 +1,6 @@
 # Protocolo HID do Cyclone 2
 
-Este é o protocolo de configuração que o GameSir Connect 1.16.7 usa para falar com o Cyclone 2. Todos os valores estão em hexadecimal e os offsets contam a partir de 0. Inteiros de 16 bits são big-endian, com uma exceção: a IMU, que é little-endian.
+Este é o protocolo de configuração que o GameSir Connect 1.16.7 usa para falar com o Cyclone 2. Bytes de pacote e IDs estão em hexadecimal; posições, offsets e tamanhos, em decimal, contando a partir de 0. Inteiros de 16 bits são big-endian, com uma exceção: a IMU, que é little-endian.
 
 Além do gamepad que o Windows enxerga, o controle expõe uma segunda interface HID só para configuração. Por ela, você manda comandos de 64 bytes e o controle responde. Enquanto você mantiver um heartbeat, o controle também transmite o próprio estado sem parar: botões, analógicos, bateria e LEDs. Toda a configuração (luzes, mapeamentos, macros, gatilhos) mora em **perfis**, blocos de memória numerados que você lê e grava por offset. Mudar o controle é gravar bytes no lugar certo de um perfil.
 
@@ -38,7 +38,7 @@ A conversa acontece por reports de 64 bytes. O primeiro byte é o report ID e di
 
 O estado só chega enquanto o controle sabe que tem alguém ouvindo. Para isso existe o heartbeat: mande `0F F2 00` a cada segundo. Se você parar, o `0x12` para também.
 
-O resto da sessão segue as regras do app. Ele espera a resposta de cada comando antes de mandar o próximo e reenvia o que fica sem resposta:
+O resto segue as regras do app, que espera a resposta de cada comando antes de mandar o próximo e reenvia o que fica sem resposta:
 
 - `0F F2 01`, em vez de `00`, ativa o modo de teste de botões.
 - Um comando por vez. Sem resposta em 200 ms, reenviar; desistir após 10 envios.
@@ -59,7 +59,7 @@ No dia a dia, quase tudo passa por quatro comandos: ler e gravar perfil (`04` e 
 | `07` | `0F 07 n` | `10 06 00` | ativa o perfil de jogo `n` (1–4; 5 = Shift) |
 | `09` | `0F 09` | `10 0A …` | versões de firmware |
 | `0B` | `0F 0B` | `10 0C n` | perfil de jogo ativo |
-| `0D` | `0F 0D p f` | — | luz: `p = 1` toca a animação; `p = 0` pausa no frame `f` (base 1) |
+| `0D` | `0F 0D p f` | — | luz: `p = 1` toca a animação; `p = 0` pausa no quadro `f` (base 1) |
 | `10` | `0F 10 n oH oL len` | `10 11 n oH oL len data…` | igual ao `04` |
 | `16` | `0F 16 k s` | `10 0F` ao terminar | gravação de macro pelo controle: `k` 1 = L4, 2 = R4; `s` 0 cancela (não verificado), 1 inicia, 2 para e salva |
 | `20` | `0F 20 66 55 L R` | — | vibração, `L` e `R` de 0 a 255 |
@@ -68,9 +68,7 @@ No dia a dia, quase tudo passa por quatro comandos: ler e gravar perfil (`04` e 
 | `FC` | `0F FC` | — | entra em modo DFU |
 | `FD` | `0F FD s` | — | calibração; o app nunca envia (não verificado) |
 
-Quem guarda uma cópia de um perfil precisa reler o trecho que esta notificação avisa.
-
-**Notificação `10 0F n oH oL lenH lenL`**: o controle alterou `len` bytes do perfil `n` a partir de `offset` (troca de animação pelo botão M, fim de gravação de macro). `n = 48` indica o perfil ativo.
+**Notificação `10 0F n oH oL lenH lenL`**: o controle alterou `len` bytes do perfil `n` a partir do offset, por exemplo ao trocar a animação pelo botão M ou ao terminar uma gravação de macro. `n = 48` indica o perfil ativo. Quem guarda uma cópia do perfil precisa reler esse trecho.
 
 Definidos no app e nunca enviados: `0F 04 n 03 9D 07` (ler "device info", offset 925; responde como leitura comum, 7 bytes zerados), `0F 03 n 03 9E 06 <6 ASCII>` (gravar "device id"), `0F 01` e `0F 02 s` (entrar e sair de configuração).
 
@@ -83,11 +81,11 @@ A resposta ao `09` traz duas versões em texto UTF-16LE: a do controle e a do do
       └───── "0346" ──────────┘ └───── "0121" ──────────┘   UTF-16LE
 ```
 
-Bytes 2–9: controle. Bytes 10–17: dongle, zerados no cabo. A versão são os dígitos após o primeiro: `"0346"` → 3.4.6.
+Bytes 2–9: controle. Bytes 10–17: dongle, zerados no cabo. A versão é formada pelos dígitos depois do primeiro: `"0346"` → 3.4.6.
 
 ## Report de estado `0x12`
 
-É o report que o controle manda o tempo todo enquanto houver heartbeat. Ele junta num pacote só tudo o que dá para ler ao vivo: entradas, sensores de movimento, bateria e a cor que cada LED mostra naquele instante.
+O controle manda este report sem parar enquanto houver heartbeat. Ele traz num pacote só tudo o que dá para ler ao vivo: entradas, sensores de movimento, bateria e a cor que cada LED mostra naquele instante.
 
 Frequência: no cabo, a taxa de report do perfil ativo (250, 500 ou 1000 Hz); pelo dongle, cerca de 200 por segundo.
 
@@ -166,13 +164,13 @@ Animação, 124 bytes:
 
 | Offset | Campo |
 |---|---|
-| +0 | número de frames, 1–8 |
+| +0 | número de quadros, 1–8 |
 | +1 | sempre 5 |
 | +2 | 20 − velocidade (velocidade 0–20, maior = mais rápido) |
 | +3 | brilho, 0–100 |
-| +4 + 15·f | frame `f` (0–7): 5 cores RGB |
+| +4 + 15·f | quadro `f` (0–7): 5 cores RGB |
 
-Dentro do frame, as cores vêm numa ordem diferente da do report `0x12`. É fácil trocar uma zona pela outra aqui:
+Dentro do quadro, as cores vêm numa ordem diferente da do report `0x12`, então é fácil trocar uma zona pela outra:
 
 | Posição | Bytes | Zona | LED |
 |---|---|---|---|
@@ -186,8 +184,8 @@ Dentro do frame, as cores vêm numa ordem diferente da do report `0x12`. É fác
 
 - A coluna `UpperRight` acende tantos LEDs quanto o número do perfil de jogo ativo, de cima para baixo: perfil 1 só o de cima, perfil 4 todos. Na dock o controle desliga e o firmware acende a coluna de baixo para cima até o Home; nada no perfil de luz muda essa animação. Não há comando para acender os LEDs da coluna um a um.
 - No controle, M + analógico esquerdo ←/→ troca a animação ativa; o controle notifica com `10 0F`.
-- Para apagar, use um frame preto; não existe flag de desligar.
-- Os presets do app (Flow, Rainbow, Pulse, Standoff, Alarm, Off) só preenchem frames e velocidade de uma animação. As cores estão em `lib/src/models/cyclone2/presets.ts`.
+- Para apagar, use um quadro preto; não existe flag de desligar.
+- Os presets do app (Flow, Rainbow, Pulse, Standoff, Alarm, Off) só preenchem os quadros e a velocidade de uma animação. As cores estão em `lib/src/models/cyclone2/presets.ts`.
 
 ### Perfil de jogo (1–5)
 

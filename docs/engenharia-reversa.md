@@ -1,27 +1,19 @@
 # Engenharia reversa
 
-Como o protocolo foi extraído do GameSir Connect e verificado no hardware, e por que este projeto existe.
+O protocolo foi extraído do código do GameSir Connect 1.16.7 e conferido num Cyclone 2. Esta página resume o método e aponta onde está cada parte no código do app.
 
-## Por que
+## Método
 
-Eu queria ver a bateria do meu Cyclone 2 sem abrir o GameSir Connect só para conferir a porcentagem: alguma cor de LED indicando o nível da bateria. Procurei no app uma opção assim e não existe.
+### 1. Extrair o código
 
-Depois procurei uma lib ou um script que lesse a bateria do controle e mudasse os LEDs por código. Também não achei. O protocolo não é documentado, e o único programa que fala com o controle é o próprio app da GameSir.
+O GameSir Connect é um app Electron. O código fica num arquivo `app.asar`, que é possível decompilar usando a própria lib do electron, em dois bundles:
 
-Então decidi abrir o app. O GameSir Connect é feito em Electron, ou seja, por baixo é JavaScript, e dá para ler. Tirei de lá as funções que conversam com o controle e escrevi o script eu mesmo: o [`battery-led`](../examples/battery-led), que hoje também roda como um app em segundo plano no Windows. Com o script funcionando, ficou claro que o mesmo caminho servia para controlar o controle inteiro, e o script virou a lib.
+| Bundle | Conteúdo |
+|---|---|
+| `dist/electron/main.js` | comunicação HID; webpack 4, 944 KB em uma linha, 252 módulos |
+| `dist/electron/renderer.js` | interface; Vue 2, 5,1 MB |
 
-## O processo
-
-### 1. Abrir o app
-
-Um app Electron empacota o código num arquivo `app.asar`, um pacote de arquivos que dá para extrair sem a GameSir. O app analisado é o GameSir Connect 1.16.7, e o código dele está em dois bundles:
-
-- **Comunicação HID**: `dist/electron/main.js`, webpack 4, 944 KB em uma linha
-- **Interface**: `dist/electron/renderer.js`, Vue 2, 5,1 MB
-
-Toda a comunicação com o controle está no `main.js`, que vem minificado: 944 KB numa linha só, com os 252 módulos do webpack colados. Para ler e apontar linhas, os módulos são separados sem executar nenhum, e o código é formatado.
-
-O repositório não inclui o app. Para reproduzir:
+O repositório não inclui o app. Para gerar os arquivos de análise:
 
 ```bash
 npx --yes @electron/asar extract "<instalação>/resources/app.asar" decompiled
@@ -36,35 +28,28 @@ docs/scripts/prepare-analysis.sh decompiled
 
 As referências `arquivo:linha` desta página apontam para esses arquivos.
 
-### 2. Achar o controle no código
+### 2. Achar o controle
 
-O ponto de partida foram dois números: o vendor ID da GameSir, `0x3537` (13623 em decimal), e a usage page da interface de configuração, `0xFFF0` (65520). Buscar esses valores leva à tabela de dispositivos do app (`main.app.js:34212`), que lista cada modelo com os PIDs dele e a classe que o controla. A entrada do Cyclone 2 aponta para a classe que traduz cada ação da interface em pacotes HID (`main.app.js:8053`).
+Buscar o vendor ID da GameSir, `0x3537` (13623), e a usage page de configuração, `0xFFF0` (65520), leva à tabela de dispositivos (`main.app.js:34212`). Ela liga cada modelo aos PIDs dele e à classe que o controla. A classe do Cyclone 2 (`main.app.js:8053`) traduz os eventos da interface em pacotes HID.
 
-Só o processo principal acessa o HID; a interface emite eventos que a classe do modelo traduz em pacotes. Ao conectar o Cyclone 2, a classe envia o heartbeat e lê os perfis 1–5 e 32, a versão de firmware e o perfil ativo. A atualização de firmware usa uma DLL da JieLi via `ffi` e fica fora deste projeto.
+Só o processo principal acessa o HID. Ao conectar, a classe manda o heartbeat e lê os perfis 1–5 e 32, a versão de firmware e o perfil ativo. A atualização de firmware passa por uma DLL da JieLi via `ffi` e fica fora deste projeto.
 
-### 3. Ler a bateria
+### 3. Ler os codecs
 
-O primeiro objetivo era a bateria. Ela não vem de um comando: chega no report de estado `0x12`, que o controle manda continuamente enquanto houver heartbeat, junto com botões, analógicos e LEDs. O código que lê esse report (`main.app.js:825`, `7986`, `8276`) mostrou onde estão a porcentagem e o indicador de carregamento.
+O resto do protocolo saiu destes trechos, listados em [Onde está cada parte](#onde-está-cada-parte):
 
-### 4. Mudar a cor
+- **Report de estado `0x12`**: bateria, botões, analógicos e LEDs. O controle só manda enquanto recebe heartbeat, que o app envia a cada 1 s com a janela em foco.
+- **Fila de comandos**: um comando por vez, reenvio a cada 200 ms, até 10 tentativas.
+- **Perfil de luz (32)**: 635 bytes, quatro animações do usuário e uma de carregamento, cada uma com até 8 quadros de cor por zona. Os nomes das zonas e dos presets vêm da tela de luzes.
+- **Perfil de jogo (1–5)**: botões, macros, gatilhos, analógicos e giroscópio.
 
-O segundo objetivo era a cor. As luzes moram no perfil de luz (perfil 32), um bloco de 635 bytes que o app lê e grava em pedaços. O codec desse perfil (`main.app.js:7923`) mostrou o layout: quatro animações do usuário e uma de carregamento, cada uma com até 8 quadros de cores por zona. A tela de luzes do app (`renderer.js:135161`) e os presets (`renderer.js:28100`) deram os nomes oficiais das zonas e o que cada preset preenche.
+O layout de cada um está em [Protocolo](protocolo.md).
 
-### 5. Manter o estado chegando
+### 4. Conferir no controle
 
-Faltava manter o report de estado chegando. O controle não manda esse report por conta própria: ele precisa de um heartbeat, que o app manda a cada 1 s, só com a janela em foco (`main.app.js:717`). Sem o heartbeat, o controle para de mandar o estado. Os outros comandos passam por uma fila que manda um de cada vez e reenvia a cada 200 ms, até 10 tentativas (`main.app.js:7744`).
+O app nem sempre confere o que recebe, e às vezes define campos que não usa. Por isso cada comportamento foi testado no controle, e quando os dois discordavam o controle era usado como fonte de verdade. As diferenças estão em [Verificação no hardware](#verificação-no-hardware).
 
-### 6. Conferir no controle
-
-Ler o código não basta, porque o app às vezes não confere o que recebe e às vezes nem usa o que define. Por isso, cada comportamento foi testado no controle. Quando o controle discordava do código, valia o controle, e a lib e as docs eram corrigidas.
-
-Alguns exemplos do que o código não mostrava: as respostas chegam com report ID `0x10`, e não `0x0F`; os bytes 54–62 do estado são as entradas físicas, antes do mapeamento; o `delay` das macros conta do início de um passo ao início do próximo. A lista completa está em [Verificação no hardware](#verificação-no-hardware).
-
-O resto do perfil de jogo (botões, macros, gatilhos, analógicos e giroscópio) seguiu o mesmo caminho, a partir do codec do perfil de jogo.
-
-## Apêndice
-
-### Onde está cada parte
+## Onde está cada parte
 
 | Parte | Local |
 |---|---|
@@ -81,7 +66,7 @@ O resto do perfil de jogo (botões, macros, gatilhos, analógicos e giroscópio)
 | Tela de luzes e presets | `renderer.js:135161`, `28100` |
 | Tela de macro: Single Press, Long Press, loop | `renderer.js:13521`, `14910` |
 
-### Outros controles
+## Outros controles
 
 A tabela de dispositivos divide os controles em duas famílias, e só uma delas dá para seguir pelo JavaScript.
 
@@ -102,13 +87,13 @@ Dentro da família `0x0F`, o que muda de um modelo para outro é sobretudo o per
 
 O Tegenaria Lite não tem perfis no app: só vibração e teste de botões, com o estado chegando como `10 14`. A lib implementa só o Cyclone 2; o núcleo (`GameSirController`) serve à família inteira.
 
-### Verificação no hardware
+## Verificação no hardware
 
 Cyclone 2 com firmware 3.4.6, pelo dongle `0x100B` (firmware 1.2.1) e pelo cabo `0x1053`, no Windows. Cada comportamento foi exercitado no controle com a lib e comparado com o código do app.
 
 Os codecs dos perfis foram conferidos com um dump real (`lib/test/fixtures/dump-dongle-fw346.json`): decodificar e recodificar devolve os mesmos bytes.
 
-O que o código do app não dizia, ou dizia errado:
+O que o código do app divergia:
 
 | Ponto | Medido |
 |---|---|
@@ -125,7 +110,7 @@ O que o código do app não dizia, ou dizia errado:
 | PID `0x0575` | dongle sem controle conectado |
 | Desconexão | o `node-hid` emite `error` quando o controle some; sem listener, o processo Node termina |
 
-### Limites
+## Limites
 
 - **Sem significado conhecido**: report `0x12`: bytes 10, 12 e 25–34 · perfil de luz: `UserEffectIndex` · perfil de jogo: campos de áudio
 - **Não verificado**: PIDs `0x101D` e `0x102A` · `0F 16 k 00` (cancelar gravação) · `0F FD` (calibração) · gravação de "device id"
